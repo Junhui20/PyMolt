@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Junhui20/PyMolt/internal/analyzer"
+	"github.com/Junhui20/PyMolt/internal/config"
 	"github.com/Junhui20/PyMolt/internal/detector"
 	"github.com/Junhui20/PyMolt/internal/models"
 )
@@ -387,4 +388,43 @@ func (a *App) ImportEnvironment(jsonData string) string {
 	}
 
 	return "Found " + strconv.Itoa(len(data.Installations)) + " installations:\n" + strings.Join(summary, "\n")
+}
+
+// --- Venv Scan Config ---
+
+type VenvScanConfig struct {
+	Paths        []string `json:"paths"`
+	FullHomeScan bool     `json:"fullHomeScan"`
+}
+
+func (a *App) GetVenvScanConfig() *VenvScanConfig {
+	cfg := config.Load()
+	return &VenvScanConfig{
+		Paths:        cfg.VenvScanPaths,
+		FullHomeScan: cfg.FullHomeScan,
+	}
+}
+
+func (a *App) AddVenvScanPath(dir string) string {
+	if dir == "" {
+		return "Path cannot be empty"
+	}
+	if err := config.AddVenvPath(dir); err != nil {
+		return "Error: " + err.Error()
+	}
+	return "OK"
+}
+
+func (a *App) RemoveVenvScanPath(dir string) string {
+	if err := config.RemoveVenvPath(dir); err != nil {
+		return "Error: " + err.Error()
+	}
+	return "OK"
+}
+
+func (a *App) SetFullHomeScan(enabled bool) string {
+	if err := config.SetFullHomeScan(enabled); err != nil {
+		return "Error: " + err.Error()
+	}
+	return "OK"
 }

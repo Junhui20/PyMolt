@@ -1,595 +1,1506 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8"><title>Python Manager</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#f5f6f8;--bg2:#fff;--bg3:#edf0f4;--hover:#e8ebf0;
-  --text:#1a1d23;--text2:#6b7280;--text3:#9ca3af;
-  --border:#e2e5ea;--border2:#d1d5db;
-  --blue:#3b82f6;--blue-light:#eff6ff;--blue-dark:#2563eb;
-  --green:#10b981;--green-light:#ecfdf5;
-  --orange:#f59e0b;--orange-light:#fffbeb;
-  --red:#ef4444;--red-light:#fef2f2;
-  --purple:#8b5cf6;--teal:#14b8a6;
-  --r:10px;--r-sm:6px;
-  --sh:0 1px 2px rgba(0,0,0,.04),0 1px 4px rgba(0,0,0,.04);
-  --sh-md:0 2px 8px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
-  --sh-lg:0 4px 16px rgba(0,0,0,.08);
-  --transition:all .2s cubic-bezier(.4,0,.2,1);
-}
-body{font-family:'Segoe UI Variable','Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;user-select:none;font-size:13px;-webkit-font-smoothing:antialiased}
+  <meta charset="UTF-8">
+  <title>Python Manager</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
 
-/* Header */
-.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--bg2);border-bottom:1px solid var(--border);--wails-draggable:drag}
-.hdr-l{display:flex;align-items:center;gap:10px}
-.hdr h1{font-size:16px;font-weight:700;letter-spacing:-.3px}
-.hdr h1 span{color:var(--blue)}
+    :root {
+      --bg: #f5f6f8;
+      --bg2: #fff;
+      --bg3: #edf0f4;
+      --hover: #e8ebf0;
+      --text: #1a1d23;
+      --text2: #6b7280;
+      --text3: #9ca3af;
+      --border: #e2e5ea;
+      --border2: #d1d5db;
+      --blue: #3b82f6;
+      --blue-light: #eff6ff;
+      --blue-dark: #2563eb;
+      --green: #10b981;
+      --green-light: #ecfdf5;
+      --orange: #f59e0b;
+      --orange-light: #fffbeb;
+      --red: #ef4444;
+      --red-light: #fef2f2;
+      --purple: #8b5cf6;
+      --teal: #14b8a6;
+      --r: 10px;
+      --r-sm: 6px;
+      --sh: 0 1px 2px rgba(0, 0, 0, .04), 0 1px 4px rgba(0, 0, 0, .04);
+      --sh-md: 0 2px 8px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .04);
+      --sh-lg: 0 4px 16px rgba(0, 0, 0, .08);
+      --transition: all .2s cubic-bezier(.4, 0, .2, 1);
+    }
 
-/* Buttons */
-.btn{padding:8px 16px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px;font-weight:600;cursor:pointer;background:var(--bg2);transition:var(--transition);display:inline-flex;align-items:center;gap:6px}
-.btn:hover{background:var(--bg3);border-color:var(--border2);box-shadow:var(--sh)}
-.btn:active{transform:scale(.98)}
-.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
-.btn.primary:hover{background:var(--blue-dark);box-shadow:0 2px 8px rgba(59,130,246,.25)}
-.btn.danger{background:#fff;color:var(--red);border-color:#fca5a5}
-.btn.danger:hover{background:var(--red-light);border-color:var(--red)}
-.btn.sm{padding:5px 10px;font-size:11px;border-radius:5px}
-.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.scanning{animation:pulse 2s cubic-bezier(.4,0,.6,1) infinite}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.3)}50%{box-shadow:0 0 0 8px rgba(59,130,246,0)}}
+    body {
+      font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased
+    }
 
-/* Layout */
-.content{position:relative;height:calc(100vh - 49px - 30px)}
-.mp{width:100%;height:100%;overflow-y:auto;padding:20px 24px}
-.sp{position:absolute;top:0;right:0;width:400px;height:100%;border-left:1px solid var(--border);background:var(--bg2);overflow-y:auto;transform:translateX(100%);opacity:0;transition:transform .25s cubic-bezier(.4,0,.2,1),opacity .2s ease;box-shadow:-4px 0 24px rgba(0,0,0,.08);z-index:10}
-.sp.open{transform:translateX(0);opacity:1}
-.sbar{padding:6px 24px;background:var(--bg2);border-top:1px solid var(--border);font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px}
+    /* Header */
+    .hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      --wails-draggable: drag
+    }
 
-/* Tabs */
-.tabs{display:flex;gap:1px;margin-bottom:20px;background:var(--bg3);border-radius:var(--r);padding:3px}
-.tab{padding:7px 16px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);border:none;background:none;transition:var(--transition)}
-.tab:hover{color:var(--text)}
-.tab.active{background:var(--bg2);color:var(--text);box-shadow:var(--sh)}
+    .hdr-l {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
 
-/* Stats */
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
-.stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);transition:var(--transition)}
-.stat:hover{box-shadow:var(--sh-md);transform:translateY(-1px)}
-.stat .l{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:700}
-.stat .v{font-size:24px;font-weight:800;margin-top:4px;letter-spacing:-.5px;white-space:nowrap}
-.blue{color:var(--blue)}.teal{color:var(--teal)}.orange{color:var(--orange)}.red{color:var(--red)}.green{color:var(--green)}
+    .hdr h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -.3px
+    }
 
-/* Table */
-.tbl{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
-table{width:100%;border-collapse:collapse}
-th{padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;background:var(--bg3);border-bottom:1px solid var(--border);white-space:nowrap}
-td{padding:10px 14px;font-size:13px;border-bottom:1px solid var(--bg3);transition:background .1s;white-space:nowrap}
-td.path-cell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:0}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:var(--hover);cursor:pointer}
-tr.sel td{background:var(--blue-light);border-color:rgba(59,130,246,.1)}
+    .hdr h1 span {
+      color: var(--blue)
+    }
 
-/* Badges */
-.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.2px}
-.badge-uv{background:#ecfdf5;color:#047857}
-.badge-official{background:#eff6ff;color:#1d4ed8}
-.badge-pyenv{background:#f5f3ff;color:#6d28d9}
-.badge-conda{background:#fffbeb;color:#d97706}
-.badge-chocolatey{background:#fef2f2;color:#dc2626}
-.badge-store{background:#eff6ff;color:#2563eb}
-.badge-scoop{background:#ecfdf5;color:#059669}
-.badge-venv{background:var(--bg3);color:var(--text2)}
-.badge-homebrew{background:#ecfdf5;color:#047857}
-.badge-system{background:#f0fdf4;color:#166534}
-.badge-ide{background:#faf5ff;color:#7c3aed}
+    /* Buttons */
+    .btn {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--bg2);
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px
+    }
 
-.mono{font-family:'Cascadia Code','JetBrains Mono','Fira Code','Consolas',monospace;font-size:11px;color:var(--text2)}
-.hok{color:var(--green);font-weight:700}.hwarn{color:var(--orange);font-weight:700}.hbad{color:var(--red);font-weight:700}
-.otag{background:var(--red-light);color:var(--red);padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;margin-left:8px;letter-spacing:.3px}
+    .btn:hover {
+      background: var(--bg3);
+      border-color: var(--border2);
+      box-shadow: var(--sh)
+    }
 
-/* Side Panel */
-.sph{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--bg3)}
-.sph h3{font-size:14px;font-weight:700}
-.spc{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text2);padding:4px 8px;border-radius:var(--r-sm);transition:var(--transition)}
-.spc:hover{background:var(--hover);color:var(--text)}
-.sps{padding:16px 20px;border-bottom:1px solid var(--bg3)}
-.sps h4{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;font-weight:700}
-.spr{display:flex;justify-content:space-between;padding:4px 0;font-size:12px}
-.spr .k{color:var(--text2)} .spr .vl{font-weight:600;max-width:200px;text-align:right;word-break:break-all}
+    .btn:active {
+      transform: scale(.98)
+    }
 
-/* Package list */
-.pkg-list{max-height:280px;overflow-y:auto;margin-top:10px}
-.pkg-item{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;font-size:12px;border-radius:var(--r-sm);transition:var(--transition)}
-.pkg-item:hover{background:var(--bg3)}
-.pkg-name{font-weight:600;color:var(--text)} .pkg-ver{color:var(--text3);font-family:'Cascadia Code',monospace;font-size:11px}
-.pkg-rm{background:none;border:none;color:var(--text3);cursor:pointer;padding:2px 6px;border-radius:4px;font-size:11px;transition:var(--transition);opacity:0}
-.pkg-item:hover .pkg-rm{opacity:1}
-.pkg-rm:hover{background:var(--red-light);color:var(--red)}
+    .btn.primary {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue)
+    }
 
-/* PATH entries */
-.pe{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--bg3);font-size:12px;transition:var(--transition)}
-.pe:last-child{border-bottom:none}
-.pe:hover{background:var(--bg3)}
-.pe .idx{width:26px;height:26px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--text2);flex-shrink:0}
-.pe .info{flex:1;min-width:0}
-.pe .path{font-family:'Cascadia Code',monospace;font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pe.orph{background:var(--red-light)} .pe.orph .path{color:var(--red);text-decoration:line-through}
-.ptag{padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.3px}
-.ptag.user{background:var(--blue-light);color:#1d4ed8}
-.ptag.system{background:#f5f3ff;color:#6d28d9}
-.ptag.orphan{background:var(--red-light);color:var(--red)}
-.ptag.active{background:var(--green-light);color:#047857}
+    .btn.primary:hover {
+      background: var(--blue-dark);
+      box-shadow: 0 2px 8px rgba(59, 130, 246, .25)
+    }
 
-/* Form */
-.input{padding:8px 12px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px;width:100%;outline:none;transition:var(--transition);background:var(--bg)}
-.input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.1);background:var(--bg2)}
-.input-row{display:flex;gap:6px;margin-top:8px}
+    .btn.danger {
+      background: #fff;
+      color: var(--red);
+      border-color: #fca5a5
+    }
 
-/* Alerts */
-.alert{padding:12px 16px;border-radius:var(--r);margin-bottom:14px;font-size:12px;line-height:1.5}
-.alert-warn{background:var(--orange-light);border:1px solid #fcd34d;color:#92400e}
-.alert-ok{background:var(--green-light);border:1px solid #6ee7b7;color:#065f46}
+    .btn.danger:hover {
+      background: var(--red-light);
+      border-color: var(--red)
+    }
 
-/* Cache */
-.cache-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--bg3)}
-.cache-row:last-child{border-bottom:none}
+    .btn.sm {
+      padding: 5px 10px;
+      font-size: 11px;
+      border-radius: 5px
+    }
 
-/* Utilities */
-.tc{display:none}.tc.active{display:block}
-.empty{padding:48px;text-align:center;color:var(--text3);font-size:14px}
-.loading{padding:24px;text-align:center;color:var(--text3)}
-.gap{margin-top:8px}
-.gap-lg{margin-top:12px}
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+      transform: none
+    }
 
-/* Scrollbar */
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+    .scanning {
+      animation: pulse 2s cubic-bezier(.4, 0, .6, 1) infinite
+    }
 
-/* Action buttons in sidebar */
-.action-grid{display:flex;flex-direction:column;gap:6px}
-.action-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg2);font-size:12px;font-weight:600;cursor:pointer;transition:var(--transition);text-align:left}
-.action-btn:hover{background:var(--bg3);border-color:var(--border2);box-shadow:var(--sh)}
-.action-btn:active{transform:scale(.98)}
-.action-btn .icon{font-size:16px;width:24px;text-align:center}
-.action-btn .label{flex:1}
-.action-btn .sublabel{font-size:10px;color:var(--text3);font-weight:400}
-.action-btn.primary-action{border-color:rgba(59,130,246,.3);background:var(--blue-light)}
-.action-btn.primary-action:hover{border-color:var(--blue);background:#dbeafe}
-.action-btn.danger-action{border-color:rgba(239,68,68,.2)}
-.action-btn.danger-action:hover{border-color:var(--red);background:var(--red-light)}
+    @keyframes pulse {
 
-/* Marketplace */
-.mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
-.mp-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;cursor:pointer;transition:var(--transition)}
-.mp-card:hover{border-color:var(--blue);box-shadow:var(--sh-md);transform:translateY(-1px)}
-.mp-card .mp-name{font-weight:700;font-size:14px;color:var(--text)}
-.mp-card .mp-sum{font-size:12px;color:var(--text2);margin-top:4px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.mp-card .mp-meta{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:10px;color:var(--text3)}
-.mp-cat-tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;background:var(--bg3);color:var(--text2)}
-.mp-search{display:flex;gap:8px;margin-bottom:16px}
-.mp-cats{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
-.mp-cat-btn{padding:5px 12px;border:1px solid var(--border);border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;background:var(--bg2);color:var(--text2);transition:var(--transition)}
-.mp-cat-btn:hover{border-color:var(--blue);color:var(--blue)}
-.mp-cat-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, .3)
+      }
 
-/* Fix wizard */
-.score-ring{width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;margin:0 auto 16px}
-.score-good{background:var(--green-light);color:#047857;border:4px solid var(--green)}
-.score-warn{background:var(--orange-light);color:#92400e;border:4px solid var(--orange)}
-.score-bad{background:var(--red-light);color:#b91c1c;border:4px solid var(--red)}
-.fix-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;transition:var(--transition)}
-.fix-card:hover{box-shadow:var(--sh-md)}
-.fix-card.critical{border-left:4px solid var(--red)}
-.fix-card.warning{border-left:4px solid var(--orange)}
-.fix-card.info{border-left:4px solid var(--blue)}
-.fix-title{font-weight:600;font-size:13px} .fix-desc{font-size:11px;color:var(--text2);margin-top:2px}
-.fix-space{font-size:11px;color:var(--orange);font-weight:600;white-space:nowrap}
-</style>
+      50% {
+        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0)
+      }
+    }
+
+    /* Layout */
+    .content {
+      position: relative;
+      height: calc(100vh - 49px - 30px)
+    }
+
+    .mp {
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      padding: 20px 24px
+    }
+
+    .sp {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 400px;
+      height: 100%;
+      border-left: 1px solid var(--border);
+      background: var(--bg2);
+      overflow-y: auto;
+      transform: translateX(100%);
+      opacity: 0;
+      transition: transform .25s cubic-bezier(.4, 0, .2, 1), opacity .2s ease;
+      box-shadow: -4px 0 24px rgba(0, 0, 0, .08);
+      z-index: 10
+    }
+
+    .sp.open {
+      transform: translateX(0);
+      opacity: 1
+    }
+
+    .sbar {
+      padding: 6px 24px;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 1px;
+      margin-bottom: 20px;
+      background: var(--bg3);
+      border-radius: var(--r);
+      padding: 3px
+    }
+
+    .tab {
+      padding: 7px 16px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text2);
+      border: none;
+      background: none;
+      transition: var(--transition)
+    }
+
+    .tab:hover {
+      color: var(--text)
+    }
+
+    .tab.active {
+      background: var(--bg2);
+      color: var(--text);
+      box-shadow: var(--sh)
+    }
+
+    /* Stats */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 20px
+    }
+
+    .stat {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px 16px;
+      box-shadow: var(--sh);
+      transition: var(--transition)
+    }
+
+    .stat:hover {
+      box-shadow: var(--sh-md);
+      transform: translateY(-1px)
+    }
+
+    .stat .l {
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      font-weight: 700
+    }
+
+    .stat .v {
+      font-size: 24px;
+      font-weight: 800;
+      margin-top: 4px;
+      letter-spacing: -.5px;
+      white-space: nowrap
+    }
+
+    .blue {
+      color: var(--blue)
+    }
+
+    .teal {
+      color: var(--teal)
+    }
+
+    .orange {
+      color: var(--orange)
+    }
+
+    .red {
+      color: var(--red)
+    }
+
+    .green {
+      color: var(--green)
+    }
+
+    /* Table */
+    .tbl {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--sh);
+      overflow: hidden
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse
+    }
+
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap
+    }
+
+    td {
+      padding: 10px 14px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--bg3);
+      transition: background .1s;
+      white-space: nowrap
+    }
+
+    td.path-cell {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 0
+    }
+
+    tr:last-child td {
+      border-bottom: none
+    }
+
+    tr:hover td {
+      background: var(--hover);
+      cursor: pointer
+    }
+
+    tr.sel td {
+      background: var(--blue-light);
+      border-color: rgba(59, 130, 246, .1)
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .2px
+    }
+
+    .badge-uv {
+      background: #ecfdf5;
+      color: #047857
+    }
+
+    .badge-official {
+      background: #eff6ff;
+      color: #1d4ed8
+    }
+
+    .badge-pyenv {
+      background: #f5f3ff;
+      color: #6d28d9
+    }
+
+    .badge-conda {
+      background: #fffbeb;
+      color: #d97706
+    }
+
+    .badge-chocolatey {
+      background: #fef2f2;
+      color: #dc2626
+    }
+
+    .badge-store {
+      background: #eff6ff;
+      color: #2563eb
+    }
+
+    .badge-scoop {
+      background: #ecfdf5;
+      color: #059669
+    }
+
+    .badge-venv {
+      background: var(--bg3);
+      color: var(--text2)
+    }
+
+    .badge-homebrew {
+      background: #ecfdf5;
+      color: #047857
+    }
+
+    .badge-system {
+      background: #f0fdf4;
+      color: #166534
+    }
+
+    .badge-ide {
+      background: #faf5ff;
+      color: #7c3aed
+    }
+
+    .mono {
+      font-family: 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 11px;
+      color: var(--text2)
+    }
+
+    .hok {
+      color: var(--green);
+      font-weight: 700
+    }
+
+    .hwarn {
+      color: var(--orange);
+      font-weight: 700
+    }
+
+    .hbad {
+      color: var(--red);
+      font-weight: 700
+    }
+
+    .otag {
+      background: var(--red-light);
+      color: var(--red);
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 9px;
+      font-weight: 700;
+      margin-left: 8px;
+      letter-spacing: .3px
+    }
+
+    /* Side Panel */
+    .sph {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg3)
+    }
+
+    .sph h3 {
+      font-size: 14px;
+      font-weight: 700
+    }
+
+    .spc {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--text2);
+      padding: 4px 8px;
+      border-radius: var(--r-sm);
+      transition: var(--transition)
+    }
+
+    .spc:hover {
+      background: var(--hover);
+      color: var(--text)
+    }
+
+    .sps {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--bg3)
+    }
+
+    .sps h4 {
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      margin-bottom: 10px;
+      font-weight: 700
+    }
+
+    .spr {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 12px
+    }
+
+    .spr .k {
+      color: var(--text2)
+    }
+
+    .spr .vl {
+      font-weight: 600;
+      max-width: 200px;
+      text-align: right;
+      word-break: break-all
+    }
+
+    /* Package list */
+    .pkg-list {
+      max-height: 280px;
+      overflow-y: auto;
+      margin-top: 10px
+    }
+
+    .pkg-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 8px;
+      font-size: 12px;
+      border-radius: var(--r-sm);
+      transition: var(--transition)
+    }
+
+    .pkg-item:hover {
+      background: var(--bg3)
+    }
+
+    .pkg-name {
+      font-weight: 600;
+      color: var(--text)
+    }
+
+    .pkg-ver {
+      color: var(--text3);
+      font-family: 'Cascadia Code', monospace;
+      font-size: 11px
+    }
+
+    .pkg-rm {
+      background: none;
+      border: none;
+      color: var(--text3);
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      transition: var(--transition);
+      opacity: 0
+    }
+
+    .pkg-item:hover .pkg-rm {
+      opacity: 1
+    }
+
+    .pkg-rm:hover {
+      background: var(--red-light);
+      color: var(--red)
+    }
+
+    /* PATH entries */
+    .pe {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--bg3);
+      font-size: 12px;
+      transition: var(--transition)
+    }
+
+    .pe:last-child {
+      border-bottom: none
+    }
+
+    .pe:hover {
+      background: var(--bg3)
+    }
+
+    .pe .idx {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: var(--bg3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text2);
+      flex-shrink: 0
+    }
+
+    .pe .info {
+      flex: 1;
+      min-width: 0
+    }
+
+    .pe .path {
+      font-family: 'Cascadia Code', monospace;
+      font-size: 11px;
+      color: var(--text2);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
+    }
+
+    .pe.orph {
+      background: var(--red-light)
+    }
+
+    .pe.orph .path {
+      color: var(--red);
+      text-decoration: line-through
+    }
+
+    .ptag {
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .3px
+    }
+
+    .ptag.user {
+      background: var(--blue-light);
+      color: #1d4ed8
+    }
+
+    .ptag.system {
+      background: #f5f3ff;
+      color: #6d28d9
+    }
+
+    .ptag.orphan {
+      background: var(--red-light);
+      color: var(--red)
+    }
+
+    .ptag.active {
+      background: var(--green-light);
+      color: #047857
+    }
+
+    /* Form */
+    .input {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      font-size: 12px;
+      width: 100%;
+      outline: none;
+      transition: var(--transition);
+      background: var(--bg)
+    }
+
+    .input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, .1);
+      background: var(--bg2)
+    }
+
+    .input-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px
+    }
+
+    /* Alerts */
+    .alert {
+      padding: 12px 16px;
+      border-radius: var(--r);
+      margin-bottom: 14px;
+      font-size: 12px;
+      line-height: 1.5
+    }
+
+    .alert-warn {
+      background: var(--orange-light);
+      border: 1px solid #fcd34d;
+      color: #92400e
+    }
+
+    .alert-ok {
+      background: var(--green-light);
+      border: 1px solid #6ee7b7;
+      color: #065f46
+    }
+
+    /* Cache */
+    .cache-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--bg3)
+    }
+
+    .cache-row:last-child {
+      border-bottom: none
+    }
+
+    /* Utilities */
+    .tc {
+      display: none
+    }
+
+    .tc.active {
+      display: block
+    }
+
+    .empty {
+      padding: 48px;
+      text-align: center;
+      color: var(--text3);
+      font-size: 14px
+    }
+
+    .loading {
+      padding: 24px;
+      text-align: center;
+      color: var(--text3)
+    }
+
+    .gap {
+      margin-top: 8px
+    }
+
+    .gap-lg {
+      margin-top: 12px
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border2)
+    }
+
+    /* Action buttons in sidebar */
+    .action-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      background: var(--bg2);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: left
+    }
+
+    .action-btn:hover {
+      background: var(--bg3);
+      border-color: var(--border2);
+      box-shadow: var(--sh)
+    }
+
+    .action-btn:active {
+      transform: scale(.98)
+    }
+
+    .action-btn .icon {
+      font-size: 16px;
+      width: 24px;
+      text-align: center
+    }
+
+    .action-btn .label {
+      flex: 1
+    }
+
+    .action-btn .sublabel {
+      font-size: 10px;
+      color: var(--text3);
+      font-weight: 400
+    }
+
+    .action-btn.primary-action {
+      border-color: rgba(59, 130, 246, .3);
+      background: var(--blue-light)
+    }
+
+    .action-btn.primary-action:hover {
+      border-color: var(--blue);
+      background: #dbeafe
+    }
+
+    .action-btn.danger-action {
+      border-color: rgba(239, 68, 68, .2)
+    }
+
+    .action-btn.danger-action:hover {
+      border-color: var(--red);
+      background: var(--red-light)
+    }
+
+    /* Marketplace */
+    .mp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 10px
+    }
+
+    .mp-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: var(--transition)
+    }
+
+    .mp-card:hover {
+      border-color: var(--blue);
+      box-shadow: var(--sh-md);
+      transform: translateY(-1px)
+    }
+
+    .mp-card .mp-name {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text)
+    }
+
+    .mp-card .mp-sum {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 4px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden
+    }
+
+    .mp-card .mp-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 10px;
+      color: var(--text3)
+    }
+
+    .mp-cat-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      background: var(--bg3);
+      color: var(--text2)
+    }
+
+    .mp-search {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px
+    }
+
+    .mp-cats {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+      flex-wrap: wrap
+    }
+
+    .mp-cat-btn {
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--bg2);
+      color: var(--text2);
+      transition: var(--transition)
+    }
+
+    .mp-cat-btn:hover {
+      border-color: var(--blue);
+      color: var(--blue)
+    }
+
+    .mp-cat-btn.active {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue)
+    }
+
+    /* Fix wizard */
+    .score-ring {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 800;
+      margin: 0 auto 16px
+    }
+
+    .score-good {
+      background: var(--green-light);
+      color: #047857;
+      border: 4px solid var(--green)
+    }
+
+    .score-warn {
+      background: var(--orange-light);
+      color: #92400e;
+      border: 4px solid var(--orange)
+    }
+
+    .score-bad {
+      background: var(--red-light);
+      color: #b91c1c;
+      border: 4px solid var(--red)
+    }
+
+    .fix-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      transition: var(--transition)
+    }
+
+    .fix-card:hover {
+      box-shadow: var(--sh-md)
+    }
+
+    .fix-card.critical {
+      border-left: 4px solid var(--red)
+    }
+
+    .fix-card.warning {
+      border-left: 4px solid var(--orange)
+    }
+
+    .fix-card.info {
+      border-left: 4px solid var(--blue)
+    }
+
+    .fix-title {
+      font-weight: 600;
+      font-size: 13px
+    }
+
+    .fix-desc {
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 2px
+    }
+
+    .fix-space {
+      font-size: 11px;
+      color: var(--orange);
+      font-weight: 600;
+      white-space: nowrap
+    }
+  </style>
 </head>
+
 <body>
-<div class="hdr">
- <div class="hdr-l"><span style="font-size:20px">🐍</span><h1>Python <span>Manager</span></h1></div>
- <button class="btn primary" id="scanBtn" onclick="scan()">Scan System</button>
-</div>
-<div class="content">
- <div class="mp" id="mp">
-  <div class="empty" id="welcome" style="padding:80px 40px">
-   <div style="font-size:48px;margin-bottom:16px;opacity:.8">🔍</div>
-   <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">Scan your system</div>
-   <div style="color:var(--text2)">Click <b>Scan System</b> to detect all Python installations</div>
+  <div class="hdr">
+    <div class="hdr-l"><span style="font-size:20px">🐍</span>
+      <h1>Python <span>Manager</span></h1>
+    </div>
+    <button class="btn primary" id="scanBtn" onclick="scan()">Scan System</button>
   </div>
-  <div id="results" style="display:none">
-   <div class="stats" id="stats"></div>
-   <div class="tabs" id="tabBar"></div>
-   <div id="tInstall" class="tc"></div>
-   <div id="tPath" class="tc"></div>
-   <div id="tHealth" class="tc"></div>
-   <div id="tCache" class="tc"></div>
-   <div id="tFix" class="tc"></div>
-   <div id="tMarket" class="tc"></div>
-   <div id="tVersions" class="tc"></div>
-   <div id="tTools" class="tc"></div>
+  <div class="content">
+    <div class="mp" id="mp">
+      <div class="empty" id="welcome" style="padding:80px 40px">
+        <div style="font-size:48px;margin-bottom:16px;opacity:.8">🔍</div>
+        <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">Scan your system</div>
+        <div style="color:var(--text2)">Click <b>Scan System</b> to detect all Python installations</div>
+      </div>
+      <div id="results" style="display:none">
+        <div class="stats" id="stats"></div>
+        <div class="tabs" id="tabBar"></div>
+        <div id="tInstall" class="tc"></div>
+        <div id="tPath" class="tc"></div>
+        <div id="tHealth" class="tc"></div>
+        <div id="tCache" class="tc"></div>
+        <div id="tFix" class="tc"></div>
+        <div id="tMarket" class="tc"></div>
+        <div id="tVersions" class="tc"></div>
+        <div id="tTools" class="tc"></div>
+      </div>
+    </div>
+    <div class="sp" id="sp">
+      <div id="spc"></div>
+    </div>
   </div>
- </div>
- <div class="sp" id="sp"><div id="spc"></div></div>
-</div>
-<div class="sbar"><span id="status">Ready</span></div>
+  <div class="sbar"><span id="status">Ready</span></div>
 
-<script>
-var S=null,H=null,P=null,selExe=null,sortedInst=[];
-var go_app=null;
-function api(){if(!go_app)go_app=window.go.internal.App;return go_app;}
+  <script>
+    var S = null, H = null, P = null, selExe = null, sortedInst = [];
+    var go_app = null;
+    function api() { if (!go_app) go_app = window.go.internal.App; return go_app; }
 
-async function scan(){
- var b=document.getElementById('scanBtn');b.disabled=true;b.classList.add('scanning');b.textContent='Scanning...';
- st('Scanning...');hide('welcome');hide('results');closeSP();
- try{S=await api().Scan();renderAll();st('Found '+S.installations.length+' installations in '+S.scanDurationMs+'ms');loadBG();}
- catch(e){st('Error: '+e);}
- b.disabled=false;b.classList.remove('scanning');b.textContent='Scan System';
-}
-async function loadBG(){try{H=await api().GetHealthCheck();}catch(e){}try{P=await api().GetPATHAnalysis();}catch(e){}}
+    async function scan() {
+      var b = document.getElementById('scanBtn'); b.disabled = true; b.classList.add('scanning'); b.textContent = 'Scanning...';
+      st('Scanning...'); hide('welcome'); hide('results'); closeSP();
+      try { S = await api().Scan(); renderAll(); st('Found ' + S.installations.length + ' installations in ' + S.scanDurationMs + 'ms'); loadBG(); }
+      catch (e) { st('Error: ' + e); }
+      b.disabled = false; b.classList.remove('scanning'); b.textContent = 'Scan System';
+    }
+    async function loadBG() { try { H = await api().GetHealthCheck(); } catch (e) { } try { P = await api().GetPATHAnalysis(); } catch (e) { } }
 
-function renderAll(){
- var i=S.installations||[],vc=0,ts=S.totalSize||0;
- i.forEach(function(x){if(x.Source==='Virtual Environment')vc++;});
- var rc=i.length-vc,dp=(S.duplicates||[]).length,or=(S.orphanedVenvs||[]).length;
- document.getElementById('stats').innerHTML=
-  stat('Installations',rc,'blue')+stat('Virtual Envs',vc,'teal')+stat('Duplicates',dp,dp>0?'red':'green')+stat('Orphaned',or,or>0?'orange':'green')+stat('Total Size',fmtSize(ts),'orange');
- document.getElementById('tabBar').innerHTML=
-  '<button class="tab active" onclick="sw(\'Install\',this)">Installations</button>'+
-  '<button class="tab" onclick="sw(\'Path\',this)">PATH</button>'+
-  '<button class="tab" onclick="sw(\'Health\',this)">Health</button>'+
-  '<button class="tab" onclick="sw(\'Cache\',this)">Cache</button>'+
-  '<button class="tab" onclick="sw(\'Fix\',this)">Fix My Python</button>'+
-  '<button class="tab" onclick="sw(\'Market\',this)">Marketplace</button>'+
-  '<button class="tab" onclick="sw(\'Versions\',this)">Versions</button>'+
-  '<button class="tab" onclick="sw(\'Tools\',this)">Tools</button>';
- renderInst();show('results');document.getElementById('tInstall').classList.add('active');
-}
-function stat(l,v,c){return'<div class="stat"><div class="l">'+l+'</div><div class="v '+c+'">'+v+'</div></div>';}
-function sw(n,el){document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});el.classList.add('active');
- document.querySelectorAll('.tc').forEach(function(t){t.classList.remove('active')});document.getElementById('t'+n).classList.add('active');
- if(n==='Health')renderHealth();if(n==='Path')renderPath();if(n==='Cache')renderCache();if(n==='Fix')renderFix();if(n==='Market')renderMarket();if(n==='Versions')renderVersions();if(n==='Tools')renderTools();}
+    function renderAll() {
+      var i = S.installations || [], vc = 0, ts = S.totalSize || 0;
+      i.forEach(function (x) { if (x.Source === 'Virtual Environment') vc++; });
+      var rc = i.length - vc, dp = (S.duplicates || []).length, or = (S.orphanedVenvs || []).length;
+      document.getElementById('stats').innerHTML =
+        stat('Installations', rc, 'blue') + stat('Virtual Envs', vc, 'teal') + stat('Duplicates', dp, dp > 0 ? 'red' : 'green') + stat('Orphaned', or, or > 0 ? 'orange' : 'green') + stat('Total Size', fmtSize(ts), 'orange');
+      document.getElementById('tabBar').innerHTML =
+        '<button class="tab active" onclick="sw(\'Install\',this)">Installations</button>' +
+        '<button class="tab" onclick="sw(\'Path\',this)">PATH</button>' +
+        '<button class="tab" onclick="sw(\'Health\',this)">Health</button>' +
+        '<button class="tab" onclick="sw(\'Cache\',this)">Cache</button>' +
+        '<button class="tab" onclick="sw(\'Fix\',this)">Fix My Python</button>' +
+        '<button class="tab" onclick="sw(\'Market\',this)">Marketplace</button>' +
+        '<button class="tab" onclick="sw(\'Versions\',this)">Versions</button>' +
+        '<button class="tab" onclick="sw(\'Tools\',this)">Tools</button>';
+      renderInst(); show('results'); document.getElementById('tInstall').classList.add('active');
+    }
+    function stat(l, v, c) { return '<div class="stat"><div class="l">' + l + '</div><div class="v ' + c + '">' + v + '</div></div>'; }
+    function sw(n, el) {
+      document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active') }); el.classList.add('active');
+      document.querySelectorAll('.tc').forEach(function (t) { t.classList.remove('active') }); document.getElementById('t' + n).classList.add('active');
+      if (n === 'Health') renderHealth(); if (n === 'Path') renderPath(); if (n === 'Cache') renderCache(); if (n === 'Fix') renderFix(); if (n === 'Market') renderMarket(); if (n === 'Versions') renderVersions(); if (n === 'Tools') renderTools();
+    }
 
-function renderInst(){
- var inst=(S.installations||[]).slice(),oset={};
- (S.orphanedVenvs||[]).forEach(function(o){oset[o.Executable]=true;});
- inst.sort(function(a,b){var av=a.Source==='Virtual Environment'?1:0,bv=b.Source==='Virtual Environment'?1:0;if(av!==bv)return av-bv;if(a.Source!==b.Source)return a.Source.localeCompare(b.Source);return b.Version.localeCompare(a.Version);});
- sortedInst=inst;
- var h='<div class="tbl"><table style="table-layout:fixed"><colgroup><col style="width:140px"><col style="width:150px"><col style="width:60px"><col><col style="width:90px"></colgroup><thead><tr><th>Source</th><th>Version</th><th>Arch</th><th>Path</th><th style="text-align:right">Size</th></tr></thead><tbody>';
- inst.forEach(function(i,idx){var c=selExe===i.Executable?' class="sel"':'';var ot=(i.IsOrphaned||oset[i.Executable])?'<span class="otag">ORPHANED</span>':'';
-  h+='<tr'+c+' onclick="selIdx('+idx+')"><td><span class="badge '+bc(i.Source)+'">'+i.Source+'</span></td><td><span style="font-weight:600">'+i.Version+'</span>'+(i.IsDefault?' <span style="color:var(--orange)">DEFAULT</span>':'')+ot+'</td><td style="color:var(--text3)">'+(i.Architecture||'-')+'</td><td class="path-cell" title="'+esc(i.Path)+'"><span class="mono">'+esc(i.Path)+'</span></td><td style="text-align:right;font-weight:600">'+fmtSize(i.SizeBytes)+'</td></tr>';});
- h+='</tbody></table></div>';document.getElementById('tInstall').innerHTML=h;
-}
-function selIdx(idx){if(sortedInst[idx])selInst(sortedInst[idx].Executable);}
+    function renderInst() {
+      var inst = (S.installations || []).slice(), oset = {};
+      (S.orphanedVenvs || []).forEach(function (o) { oset[o.Executable] = true; });
+      inst.sort(function (a, b) { var av = a.Source === 'Virtual Environment' ? 1 : 0, bv = b.Source === 'Virtual Environment' ? 1 : 0; if (av !== bv) return av - bv; if (a.Source !== b.Source) return a.Source.localeCompare(b.Source); return b.Version.localeCompare(a.Version); });
+      sortedInst = inst;
+      var h = '<div class="tbl"><table style="table-layout:fixed"><colgroup><col style="width:140px"><col style="width:150px"><col style="width:60px"><col><col style="width:90px"></colgroup><thead><tr><th>Source</th><th>Version</th><th>Arch</th><th>Path</th><th style="text-align:right">Size</th></tr></thead><tbody>';
+      inst.forEach(function (i, idx) {
+        var c = selExe === i.Executable ? ' class="sel"' : ''; var ot = (i.IsOrphaned || oset[i.Executable]) ? '<span class="otag">ORPHANED</span>' : '';
+        h += '<tr' + c + ' onclick="selIdx(' + idx + ')"><td><span class="badge ' + bc(i.Source) + '">' + i.Source + '</span></td><td><span style="font-weight:600">' + i.Version + '</span>' + (i.IsDefault ? ' <span style="color:var(--orange)">DEFAULT</span>' : '') + ot + '</td><td style="color:var(--text3)">' + (i.Architecture || '-') + '</td><td class="path-cell" title="' + esc(i.Path) + '"><span class="mono">' + esc(i.Path) + '</span></td><td style="text-align:right;font-weight:600">' + fmtSize(i.SizeBytes) + '</td></tr>';
+      });
+      h += '</tbody></table></div>'; document.getElementById('tInstall').innerHTML = h;
+    }
+    function selIdx(idx) { if (sortedInst[idx]) selInst(sortedInst[idx].Executable); }
 
-function renderPath(){var el=document.getElementById('tPath');if(!P){el.innerHTML='<div class="loading">Loading PATH analysis...</div>';return;}
- var e=P.entries||[],c=P.conflicts||[],h='';
- if(c.length>0){h+='<div class="alert alert-warn"><b>&#9888; '+c.length+' issue(s) found</b>';c.forEach(function(x){h+='<div style="margin-top:4px">'+esc(x)+'</div>';});
-  h+='<div class="gap-lg"><button class="btn sm" onclick="repairPath()">Repair PATH</button></div></div>';}
- h+='<div class="tbl">';if(e.length===0)h+='<div class="empty">No Python-related PATH entries</div>';
- else e.forEach(function(x,i){var cl=x.orphaned?' orph':'';h+='<div class="pe'+cl+'"><div class="idx">'+(i+1)+'</div><div class="info"><div class="path">'+esc(x.path)+'</div>';
-  if(x.version)h+='<div style="font-size:11px;margin-top:2px;color:var(--text2)">Python '+x.version+'</div>';h+='</div><span class="ptag '+x.source.toLowerCase()+'">'+x.source+'</span> ';
-  if(x.orphaned)h+='<span class="ptag orphan">ORPHANED</span>';else if(x.hasPython&&i===0)h+='<span class="ptag active">DEFAULT</span>';h+='</div>';});
- h+='</div>';el.innerHTML=h;}
+    function renderPath() {
+      var el = document.getElementById('tPath'); if (!P) { el.innerHTML = '<div class="loading">Loading PATH analysis...</div>'; return; }
+      var e = P.entries || [], c = P.conflicts || [], h = '';
+      if (c.length > 0) {
+        h += '<div class="alert alert-warn"><b>&#9888; ' + c.length + ' issue(s) found</b>'; c.forEach(function (x) { h += '<div style="margin-top:4px">' + esc(x) + '</div>'; });
+        h += '<div class="gap-lg"><button class="btn sm" onclick="repairPath()">Repair PATH</button></div></div>';
+      }
+      h += '<div class="tbl">'; if (e.length === 0) h += '<div class="empty">No Python-related PATH entries</div>';
+      else e.forEach(function (x, i) {
+        var cl = x.orphaned ? ' orph' : ''; h += '<div class="pe' + cl + '"><div class="idx">' + (i + 1) + '</div><div class="info"><div class="path">' + esc(x.path) + '</div>';
+        if (x.version) h += '<div style="font-size:11px;margin-top:2px;color:var(--text2)">Python ' + x.version + '</div>'; h += '</div><span class="ptag ' + x.source.toLowerCase() + '">' + x.source + '</span> ';
+        if (x.orphaned) h += '<span class="ptag orphan">ORPHANED</span>'; else if (x.hasPython && i === 0) h += '<span class="ptag active">DEFAULT</span>'; h += '</div>';
+      });
+      h += '</div>'; el.innerHTML = h;
+    }
 
-function renderHealth(){var el=document.getElementById('tHealth');if(!H){el.innerHTML='<div class="loading">Running health checks...</div>';return;}
- var h='<div class="tbl"><table><thead><tr><th>Version</th><th>Python</th><th>pip</th><th>SSL</th><th>Site-Pkgs</th><th>Status</th></tr></thead><tbody>';
- H.forEach(function(x){var c=x.overall==='Healthy'?'hok':(x.overall==='Warning'?'hwarn':'hbad');
-  h+='<tr><td style="font-weight:600">'+x.version+'</td><td>'+ck(x.pythonOk)+'</td><td>'+ck(x.pipOk)+'</td><td>'+ck(x.sslOk)+'</td><td>'+ck(x.siteOk)+'</td><td><span class="'+c+'">'+x.overall+'</span></td></tr>';});
- h+='</tbody></table></div>';
- var issues=[];H.forEach(function(x){if(x.issues)x.issues.forEach(function(i){issues.push(x.version+': '+i);});});
- if(issues.length>0){h+='<div class="alert alert-warn gap-lg"><b>Issues</b>';issues.forEach(function(i){h+='<div style="margin-top:4px">'+esc(i)+'</div>';});h+='</div>';}
- el.innerHTML=h;}
+    function renderHealth() {
+      var el = document.getElementById('tHealth'); if (!H) { el.innerHTML = '<div class="loading">Running health checks...</div>'; return; }
+      var h = '<div class="tbl"><table><thead><tr><th>Version</th><th>Python</th><th>pip</th><th>SSL</th><th>Site-Pkgs</th><th>Status</th></tr></thead><tbody>';
+      H.forEach(function (x) {
+        var c = x.overall === 'Healthy' ? 'hok' : (x.overall === 'Warning' ? 'hwarn' : 'hbad');
+        h += '<tr><td style="font-weight:600">' + x.version + '</td><td>' + ck(x.pythonOk) + '</td><td>' + ck(x.pipOk) + '</td><td>' + ck(x.sslOk) + '</td><td>' + ck(x.siteOk) + '</td><td><span class="' + c + '">' + x.overall + '</span></td></tr>';
+      });
+      h += '</tbody></table></div>';
+      var issues = []; H.forEach(function (x) { if (x.issues) x.issues.forEach(function (i) { issues.push(x.version + ': ' + i); }); });
+      if (issues.length > 0) { h += '<div class="alert alert-warn gap-lg"><b>Issues</b>'; issues.forEach(function (i) { h += '<div style="margin-top:4px">' + esc(i) + '</div>'; }); h += '</div>'; }
+      el.innerHTML = h;
+    }
 
-async function renderCache(){var el=document.getElementById('tCache');el.innerHTML='<div class="loading">Checking caches...</div>';
- try{var c=await api().GetCacheInfo();
-  var h='<div class="tbl" style="padding:20px"><h4 style="margin-bottom:16px;font-size:14px;font-weight:700">Cache Storage</h4>';
-  h+='<div class="cache-row"><div><div style="font-weight:600">pip cache</div><div class="mono" style="margin-top:2px">'+esc(c.pipPath)+'</div></div><div style="display:flex;align-items:center;gap:12px"><span style="font-weight:700;font-size:16px" class="orange">'+fmtSize(c.pipSize)+'</span>';
-  if(c.pipSize>0)h+='<button class="btn sm" onclick="cleanPip()">Clean</button>';h+='</div></div>';
-  h+='<div class="cache-row"><div><div style="font-weight:600">uv cache</div><div class="mono" style="margin-top:2px">'+esc(c.uvPath)+'</div></div><div style="display:flex;align-items:center;gap:12px"><span style="font-weight:700;font-size:16px" class="orange">'+fmtSize(c.uvSize)+'</span>';
-  if(c.uvSize>0)h+='<button class="btn sm" onclick="cleanUV()">Clean</button>';h+='</div></div>';
-  var total=c.pipSize+c.uvSize;
-  h+='<div style="margin-top:16px;padding-top:16px;border-top:2px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:14px">Total reclaimable</span><span style="font-weight:800;font-size:20px" class="orange">'+fmtSize(total)+'</span></div>';
-  if(total>0)h+='<button class="btn primary gap-lg" onclick="cleanAll()" style="width:100%;justify-content:center;padding:10px">Clean All Caches</button>';
-  h+='</div>';el.innerHTML=h;
- }catch(e){el.innerHTML='<div class="empty">Failed to load cache info</div>';}}
+    async function renderCache() {
+      var el = document.getElementById('tCache'); el.innerHTML = '<div class="loading">Checking caches...</div>';
+      try {
+        var c = await api().GetCacheInfo();
+        var h = '<div class="tbl" style="padding:20px"><h4 style="margin-bottom:16px;font-size:14px;font-weight:700">Cache Storage</h4>';
+        h += '<div class="cache-row"><div><div style="font-weight:600">pip cache</div><div class="mono" style="margin-top:2px">' + esc(c.pipPath) + '</div></div><div style="display:flex;align-items:center;gap:12px"><span style="font-weight:700;font-size:16px" class="orange">' + fmtSize(c.pipSize) + '</span>';
+        if (c.pipSize > 0) h += '<button class="btn sm" onclick="cleanPip()">Clean</button>'; h += '</div></div>';
+        h += '<div class="cache-row"><div><div style="font-weight:600">uv cache</div><div class="mono" style="margin-top:2px">' + esc(c.uvPath) + '</div></div><div style="display:flex;align-items:center;gap:12px"><span style="font-weight:700;font-size:16px" class="orange">' + fmtSize(c.uvSize) + '</span>';
+        if (c.uvSize > 0) h += '<button class="btn sm" onclick="cleanUV()">Clean</button>'; h += '</div></div>';
+        var total = c.pipSize + c.uvSize;
+        h += '<div style="margin-top:16px;padding-top:16px;border-top:2px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:14px">Total reclaimable</span><span style="font-weight:800;font-size:20px" class="orange">' + fmtSize(total) + '</span></div>';
+        if (total > 0) h += '<button class="btn primary gap-lg" onclick="cleanAll()" style="width:100%;justify-content:center;padding:10px">Clean All Caches</button>';
+        h += '</div>'; el.innerHTML = h;
+      } catch (e) { el.innerHTML = '<div class="empty">Failed to load cache info</div>'; }
+    }
 
-var _curExe='';
-async function selInst(exe){
- _curExe=exe;selExe=exe;renderInst();
- var inst=(S.installations||[]).find(function(i){return i.Executable===exe;});if(!inst)return;
- var sp=document.getElementById('sp');sp.classList.add('open');
- var h='<div class="sph"><h3>Python '+inst.Version+'</h3><button class="spc" onclick="closeSP()">&#10005;</button></div>';
- h+='<div class="sps"><h4>Details</h4>'+sr('Version',inst.Version)+sr('Source',inst.Source)+sr('Architecture',inst.Architecture||'-')+sr('Size',fmtSize(inst.SizeBytes))+'<div class="spr" style="margin-top:4px"><span class="k">Path</span></div><div class="mono" style="font-size:10px;word-break:break-all;margin-top:2px">'+esc(inst.Path)+'</div></div>';
- h+='<div class="sps"><h4>Actions</h4><div class="action-grid">';
- h+='<button class="action-btn primary-action" onclick="doAction(\'term\')"><span class="icon">&#128421;</span><div><div class="label">Open Terminal</div><div class="sublabel">Launch cmd with this Python active</div></div></button>';
- h+='<button class="action-btn" onclick="doAction(\'default\')"><span class="icon">&#11088;</span><div><div class="label">Set as Default</div><div class="sublabel">Move to front of PATH</div></div></button>';
- h+='<button class="action-btn" onclick="addToPath()"><span class="icon">&#128279;</span><div><div class="label">Add to PATH</div><div class="sublabel">Add this Python to Windows environment</div></div></button>';
- h+='<button class="action-btn" onclick="doAction(\'export\')"><span class="icon">&#128203;</span><div><div class="label">Export requirements.txt</div><div class="sublabel">Freeze installed packages</div></div></button>';
- h+='<button class="action-btn danger-action" onclick="doAction(\'uninstall\')"><span class="icon">&#128465;</span><div><div class="label">Uninstall / Delete</div><div class="sublabel">Remove this installation</div></div></button>';
- h+='</div></div>';
- h+='<div class="sps"><h4>Packages</h4><div class="input-row"><input class="input" id="pkgInput" placeholder="Package name..." onkeydown="if(event.key===\'Enter\')doAction(\'installpkg\')"><button class="btn sm primary" onclick="doAction(\'installpkg\')">Install</button></div><div id="pkgList" class="pkg-list"><div class="loading">Loading packages...</div></div></div>';
- document.getElementById('spc').innerHTML=h;
- try{var pkgs=await api().GetPackages(exe);var ph='';
-  if(!pkgs||pkgs.length===0)ph='<div style="color:var(--text3);font-size:12px;padding:8px 0">No packages found</div>';
-  else{ph='<div style="font-size:11px;color:var(--text3);margin-bottom:6px;padding:4px 0">'+pkgs.length+' packages installed</div>';
-   pkgs.forEach(function(p){ph+='<div class="pkg-item"><span class="pkg-name">'+esc(p.name)+'</span><div style="display:flex;align-items:center;gap:6px"><span class="pkg-ver">'+p.version+'</span><button class="pkg-rm" data-pkg="'+esc(p.name)+'" onclick="doRemovePkg(this.dataset.pkg)" title="Uninstall">&#10005;</button></div></div>';});}
-  document.getElementById('pkgList').innerHTML=ph;
- }catch(e){document.getElementById('pkgList').innerHTML='<div style="color:var(--red);font-size:12px;padding:8px 0">Failed to load packages</div>';}}
+    var _curExe = '';
+    async function selInst(exe) {
+      _curExe = exe; selExe = exe; renderInst();
+      var inst = (S.installations || []).find(function (i) { return i.Executable === exe; }); if (!inst) return;
+      var sp = document.getElementById('sp'); sp.classList.add('open');
+      var h = '<div class="sph"><h3>Python ' + inst.Version + '</h3><button class="spc" onclick="closeSP()">&#10005;</button></div>';
+      h += '<div class="sps"><h4>Details</h4>' + sr('Version', inst.Version) + sr('Source', inst.Source) + sr('Architecture', inst.Architecture || '-') + sr('Size', fmtSize(inst.SizeBytes)) + '<div class="spr" style="margin-top:4px"><span class="k">Path</span></div><div class="mono" style="font-size:10px;word-break:break-all;margin-top:2px">' + esc(inst.Path) + '</div></div>';
+      h += '<div class="sps"><h4>Actions</h4><div class="action-grid">';
+      h += '<button class="action-btn primary-action" onclick="doAction(\'term\')"><span class="icon">&#128421;</span><div><div class="label">Open Terminal</div><div class="sublabel">Launch cmd with this Python active</div></div></button>';
+      h += '<button class="action-btn" onclick="doAction(\'default\')"><span class="icon">&#11088;</span><div><div class="label">Set as Default</div><div class="sublabel">Move to front of PATH</div></div></button>';
+      h += '<button class="action-btn" onclick="addToPath()"><span class="icon">&#128279;</span><div><div class="label">Add to PATH</div><div class="sublabel">Add this Python to Windows environment</div></div></button>';
+      h += '<button class="action-btn" onclick="doAction(\'export\')"><span class="icon">&#128203;</span><div><div class="label">Export requirements.txt</div><div class="sublabel">Freeze installed packages</div></div></button>';
+      h += '<button class="action-btn danger-action" onclick="doAction(\'uninstall\')"><span class="icon">&#128465;</span><div><div class="label">Uninstall / Delete</div><div class="sublabel">Remove this installation</div></div></button>';
+      h += '</div></div>';
+      h += '<div class="sps"><h4>Packages</h4><div class="input-row"><input class="input" id="pkgInput" placeholder="Package name..." onkeydown="if(event.key===\'Enter\')doAction(\'installpkg\')"><button class="btn sm primary" onclick="doAction(\'installpkg\')">Install</button></div><div id="pkgList" class="pkg-list"><div class="loading">Loading packages...</div></div></div>';
+      document.getElementById('spc').innerHTML = h;
+      try {
+        var pkgs = await api().GetPackages(exe); var ph = '';
+        if (!pkgs || pkgs.length === 0) ph = '<div style="color:var(--text3);font-size:12px;padding:8px 0">No packages found</div>';
+        else {
+          ph = '<div style="font-size:11px;color:var(--text3);margin-bottom:6px;padding:4px 0">' + pkgs.length + ' packages installed</div>';
+          pkgs.forEach(function (p) { ph += '<div class="pkg-item"><span class="pkg-name">' + esc(p.name) + '</span><div style="display:flex;align-items:center;gap:6px"><span class="pkg-ver">' + p.version + '</span><button class="pkg-rm" data-pkg="' + esc(p.name) + '" onclick="doRemovePkg(this.dataset.pkg)" title="Uninstall">&#10005;</button></div></div>'; });
+        }
+        document.getElementById('pkgList').innerHTML = ph;
+      } catch (e) { document.getElementById('pkgList').innerHTML = '<div style="color:var(--red);font-size:12px;padding:8px 0">Failed to load packages</div>'; }
+    }
 
-async function doAction(act){var e=_curExe;if(!e)return;
- if(act==='term'){try{await api().OpenTerminal(e);}catch(err){alert(err);}}
- else if(act==='default'){try{var r=await api().SetDefaultPython(e);st(r);}catch(err){st('Error: '+err);}}
- else if(act==='export'){try{var r=await api().ExportRequirements(e);if(r.startsWith('Error'))st(r);else{prompt('Copy requirements.txt:',r);}}catch(err){st('Error: '+err);}}
- else if(act==='uninstall'){if(!confirm('Are you sure you want to uninstall this Python?'))return;try{var r=await api().UninstallPython(e);st(r.message);if(r.success){closeSP();scan();}}catch(err){st('Error: '+err);}}
- else if(act==='installpkg'){var n=document.getElementById('pkgInput').value.trim();if(!n)return;st('Installing '+n+'...');try{var r=await api().InstallPackage(e,n);st(r);document.getElementById('pkgInput').value='';selInst(e);}catch(err){st('Error: '+err);}}}
-async function doRemovePkg(p){if(!confirm('Uninstall '+p+'?'))return;st('Removing '+p+'...');
- try{var r=await api().UninstallPackage(_curExe,p);st(r);selInst(_curExe);}catch(err){st('Error: '+err);}}
-async function repairPath(){if(!confirm('Remove orphaned PATH entries? (backup will be saved)'))return;
- try{var r=await api().RepairPATH();st(r);P=await api().GetPATHAnalysis();renderPath();}catch(err){st('Error: '+err);}}
-async function cleanPip(){try{var r=await api().CleanPipCache();st(r.message);renderCache();}catch(e){st('Error');}}
-async function cleanUV(){try{var r=await api().CleanUVCache();st(r.message);renderCache();}catch(e){st('Error');}}
-async function cleanAll(){if(!confirm('Clean all caches?'))return;await cleanPip();await cleanUV();}
+    async function doAction(act) {
+      var e = _curExe; if (!e) return;
+      if (act === 'term') { try { await api().OpenTerminal(e); } catch (err) { alert(err); } }
+      else if (act === 'default') { try { var r = await api().SetDefaultPython(e); st(r); } catch (err) { st('Error: ' + err); } }
+      else if (act === 'export') { try { var r = await api().ExportRequirements(e); if (r.startsWith('Error')) st(r); else { prompt('Copy requirements.txt:', r); } } catch (err) { st('Error: ' + err); } }
+      else if (act === 'uninstall') { if (!confirm('Are you sure you want to uninstall this Python?')) return; try { var r = await api().UninstallPython(e); st(r.message); if (r.success) { closeSP(); scan(); } } catch (err) { st('Error: ' + err); } }
+      else if (act === 'installpkg') { var n = document.getElementById('pkgInput').value.trim(); if (!n) return; st('Installing ' + n + '...'); try { var r = await api().InstallPackage(e, n); st(r); document.getElementById('pkgInput').value = ''; selInst(e); } catch (err) { st('Error: ' + err); } }
+    }
+    async function doRemovePkg(p) {
+      if (!confirm('Uninstall ' + p + '?')) return; st('Removing ' + p + '...');
+      try { var r = await api().UninstallPackage(_curExe, p); st(r); selInst(_curExe); } catch (err) { st('Error: ' + err); }
+    }
+    async function repairPath() {
+      if (!confirm('Remove orphaned PATH entries? (backup will be saved)')) return;
+      try { var r = await api().RepairPATH(); st(r); P = await api().GetPATHAnalysis(); renderPath(); } catch (err) { st('Error: ' + err); }
+    }
+    async function cleanPip() { try { var r = await api().CleanPipCache(); st(r.message); renderCache(); } catch (e) { st('Error'); } }
+    async function cleanUV() { try { var r = await api().CleanUVCache(); st(r.message); renderCache(); } catch (e) { st('Error'); } }
+    async function cleanAll() { if (!confirm('Clean all caches?')) return; await cleanPip(); await cleanUV(); }
 
-// --- Fix My Python ---
-async function renderFix(){
- var el=document.getElementById('tFix');
- el.innerHTML='<div class="loading">Running diagnostics...</div>';
- try{var r=await api().GetFixReport();
-  var scoreCls=r.scorePercent>=80?'score-good':(r.scorePercent>=50?'score-warn':'score-bad');
-  var h='<div style="text-align:center;padding:20px 0"><div class="score-ring '+scoreCls+'">'+r.scorePercent+'</div>';
-  h+='<div style="font-size:18px;font-weight:700">Python Health Score</div>';
-  h+='<div style="color:var(--text2);margin-top:4px">'+r.totalIssues+' issue(s) found';
-  if(r.reclaimBytes>0)h+=' &middot; '+fmtSize(r.reclaimBytes)+' reclaimable';
-  h+='</div></div>';
+    // --- Fix My Python ---
+    async function renderFix() {
+      var el = document.getElementById('tFix');
+      el.innerHTML = '<div class="loading">Running diagnostics...</div>';
+      try {
+        var r = await api().GetFixReport();
+        var scoreCls = r.scorePercent >= 80 ? 'score-good' : (r.scorePercent >= 50 ? 'score-warn' : 'score-bad');
+        var h = '<div style="text-align:center;padding:20px 0"><div class="score-ring ' + scoreCls + '">' + r.scorePercent + '</div>';
+        h += '<div style="font-size:18px;font-weight:700">Python Health Score</div>';
+        h += '<div style="color:var(--text2);margin-top:4px">' + r.totalIssues + ' issue(s) found';
+        if (r.reclaimBytes > 0) h += ' &middot; ' + fmtSize(r.reclaimBytes) + ' reclaimable';
+        h += '</div></div>';
 
-  if(r.issues&&r.issues.length>0){
-   // Auto-fixable first
-   var auto=r.issues.filter(function(i){return i.autoFixable;});
-   var manual=r.issues.filter(function(i){return!i.autoFixable;});
+        if (r.issues && r.issues.length > 0) {
+          // Auto-fixable first
+          var auto = r.issues.filter(function (i) { return i.autoFixable; });
+          var manual = r.issues.filter(function (i) { return !i.autoFixable; });
 
-   if(auto.length>0){
-    h+='<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Auto-fixable ('+auto.length+')</div>';
-    auto.forEach(function(i){
-     h+='<div class="fix-card '+i.severity+'">';
-     h+='<div style="flex:1"><div class="fix-title">'+esc(i.title)+'</div><div class="fix-desc">'+esc(i.description)+'</div></div>';
-     if(i.spaceSaved>0)h+='<span class="fix-space">'+fmtSize(i.spaceSaved)+'</span>';
-     h+='<button class="btn sm primary" onclick="execFix(\''+esc(i.fixAction)+'\')">'+esc(i.fixLabel)+'</button>';
-     h+='</div>';
-    });
-    h+='</div>';
-   }
-   if(manual.length>0){
-    h+='<div><div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Manual review ('+manual.length+')</div>';
-    manual.forEach(function(i){
-     h+='<div class="fix-card '+i.severity+'">';
-     h+='<div style="flex:1"><div class="fix-title">'+esc(i.title)+'</div><div class="fix-desc">'+esc(i.description)+'</div></div>';
-     h+='</div>';
-    });
-    h+='</div>';
-   }
-  } else {
-   h+='<div class="alert alert-ok" style="margin-top:16px;text-align:center"><b>All clean!</b> No issues found.</div>';
-  }
-  el.innerHTML=h;
- }catch(e){el.innerHTML='<div class="empty">Failed to generate report</div>';}}
+          if (auto.length > 0) {
+            h += '<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Auto-fixable (' + auto.length + ')</div>';
+            auto.forEach(function (i) {
+              h += '<div class="fix-card ' + i.severity + '">';
+              h += '<div style="flex:1"><div class="fix-title">' + esc(i.title) + '</div><div class="fix-desc">' + esc(i.description) + '</div></div>';
+              if (i.spaceSaved > 0) h += '<span class="fix-space">' + fmtSize(i.spaceSaved) + '</span>';
+              h += '<button class="btn sm primary" onclick="execFix(\'' + esc(i.fixAction) + '\')">' + esc(i.fixLabel) + '</button>';
+              h += '</div>';
+            });
+            h += '</div>';
+          }
+          if (manual.length > 0) {
+            h += '<div><div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Manual review (' + manual.length + ')</div>';
+            manual.forEach(function (i) {
+              h += '<div class="fix-card ' + i.severity + '">';
+              h += '<div style="flex:1"><div class="fix-title">' + esc(i.title) + '</div><div class="fix-desc">' + esc(i.description) + '</div></div>';
+              h += '</div>';
+            });
+            h += '</div>';
+          }
+        } else {
+          h += '<div class="alert alert-ok" style="margin-top:16px;text-align:center"><b>All clean!</b> No issues found.</div>';
+        }
+        el.innerHTML = h;
+      } catch (e) { el.innerHTML = '<div class="empty">Failed to generate report</div>'; }
+    }
 
-async function execFix(action){st('Fixing...');
- try{var r=await api().ExecuteFix(action);st(r);renderFix();}catch(e){st('Error: '+e);}}
+    async function execFix(action) {
+      st('Fixing...');
+      try { var r = await api().ExecuteFix(action); st(r); renderFix(); } catch (e) { st('Error: ' + e); }
+    }
 
-// --- Marketplace ---
-var _mpData=null,_mpCats=null,_mpCat='All',_mpSearch='';
-async function renderMarket(){
- var el=document.getElementById('tMarket');
- if(!_mpData){el.innerHTML='<div class="loading">Loading package catalog from awesome-python...</div>';
-  try{_mpData=await api().LoadCatalog();_mpCats=await api().GetCatalogCategories();}
-  catch(e){el.innerHTML='<div class="empty">Failed to load catalog. Check internet connection.</div>';return;}}
- if(!_mpData||_mpData.length===0){el.innerHTML='<div class="empty">No packages loaded</div>';return;}
+    // --- Marketplace ---
+    var _mpData = null, _mpCats = null, _mpCat = 'All', _mpSearch = '';
+    async function renderMarket() {
+      var el = document.getElementById('tMarket');
+      if (!_mpData) {
+        el.innerHTML = '<div class="loading">Loading package catalog from awesome-python...</div>';
+        try { _mpData = await api().LoadCatalog(); _mpCats = await api().GetCatalogCategories(); }
+        catch (e) { el.innerHTML = '<div class="empty">Failed to load catalog. Check internet connection.</div>'; return; }
+      }
+      if (!_mpData || _mpData.length === 0) { el.innerHTML = '<div class="empty">No packages loaded</div>'; return; }
 
- // Target Python selector
- var installs=(S&&S.installations)?S.installations.filter(function(i){return i.Source!=='Virtual Environment';}):[];
- var h='<div style="display:flex;gap:12px;margin-bottom:14px;align-items:center">';
- h+='<span style="font-size:12px;font-weight:600;color:var(--text2);white-space:nowrap">Install into:</span>';
- h+='<select class="input" id="mpTarget" style="width:auto;min-width:200px">';
- if(!_curExe&&installs.length>0)_curExe=installs[0].Executable;
- installs.forEach(function(i){var sel=i.Executable===_curExe?' selected':'';
-  h+='<option value="'+esc(i.Executable)+'"'+sel+'>Python '+i.Version+' ('+i.Source+')</option>';});
- h+='</select></div>';
+      // Target Python selector
+      var installs = (S && S.installations) ? S.installations.filter(function (i) { return i.Source !== 'Virtual Environment'; }) : [];
+      var h = '<div style="display:flex;gap:12px;margin-bottom:14px;align-items:center">';
+      h += '<span style="font-size:12px;font-weight:600;color:var(--text2);white-space:nowrap">Install into:</span>';
+      h += '<select class="input" id="mpTarget" style="width:auto;min-width:200px">';
+      if (!_curExe && installs.length > 0) _curExe = installs[0].Executable;
+      installs.forEach(function (i) {
+        var sel = i.Executable === _curExe ? ' selected' : '';
+        h += '<option value="' + esc(i.Executable) + '"' + sel + '>Python ' + i.Version + ' (' + i.Source + ')</option>';
+      });
+      h += '</select></div>';
 
- // Search
- h+='<div class="mp-search"><input class="input" id="mpSearchInput" placeholder="Search 1500+ packages or any PyPI package..." value="'+esc(_mpSearch)+'" onkeydown="if(event.key===\'Enter\')searchMP()"><button class="btn primary" onclick="searchMP()">Search PyPI</button></div>';
+      // Search
+      h += '<div class="mp-search"><input class="input" id="mpSearchInput" placeholder="Search 1500+ packages or any PyPI package..." value="' + esc(_mpSearch) + '" onkeydown="if(event.key===\'Enter\')searchMP()"><button class="btn primary" onclick="searchMP()">Search PyPI</button></div>';
 
- // Categories
- var cats=['All'].concat(_mpCats||[]);
- h+='<div class="mp-cats">';cats.forEach(function(c){h+='<button class="mp-cat-btn'+(c===_mpCat?' active':'')+'" onclick="filterCat(\''+esc(c)+'\')">'+c+'</button>';});h+='</div>';
+      // Categories
+      var cats = ['All'].concat(_mpCats || []);
+      h += '<div class="mp-cats">'; cats.forEach(function (c) { h += '<button class="mp-cat-btn' + (c === _mpCat ? ' active' : '') + '" onclick="filterCat(\'' + esc(c) + '\')">' + c + '</button>'; }); h += '</div>';
 
- // Filter
- var filtered=_mpCat==='All'?_mpData:_mpData.filter(function(p){return p.category===_mpCat;});
- if(_mpSearch){var q=_mpSearch.toLowerCase();filtered=filtered.filter(function(p){return(p.name&&p.name.toLowerCase().indexOf(q)>=0)||(p.description&&p.description.toLowerCase().indexOf(q)>=0);});}
+      // Filter
+      var filtered = _mpCat === 'All' ? _mpData : _mpData.filter(function (p) { return p.category === _mpCat; });
+      if (_mpSearch) { var q = _mpSearch.toLowerCase(); filtered = filtered.filter(function (p) { return (p.name && p.name.toLowerCase().indexOf(q) >= 0) || (p.description && p.description.toLowerCase().indexOf(q) >= 0); }); }
 
- h+='<div style="font-size:11px;color:var(--text3);margin-bottom:8px">'+filtered.length+' packages</div>';
- h+='<div class="mp-grid">';
- filtered.slice(0,60).forEach(function(p){
-  var installName=p.pypiId||p.name;
-  h+='<div class="mp-card">';
-  h+='<div style="display:flex;justify-content:space-between;align-items:start">';
-  h+='<div class="mp-name">'+esc(p.name)+'</div>';
-  if(p.stars>0)h+='<span style="font-size:10px;color:var(--text3)">'+fmtStars(p.stars)+'</span>';
-  h+='</div>';
-  h+='<div class="mp-sum">'+esc(p.description)+'</div>';
-  h+='<div class="mp-meta"><span class="mp-cat-tag">'+esc(p.category)+'</span>';
-  h+='<button class="btn sm primary" onclick="event.stopPropagation();installFromMP(\''+esc(installName)+'\')">Install</button>';
-  h+='</div></div>';
- });
- if(filtered.length>60)h+='<div style="padding:20px;text-align:center;color:var(--text3);grid-column:1/-1">Showing first 60 of '+filtered.length+'. Use search to narrow down.</div>';
- h+='</div>';el.innerHTML=h;
- // Update _curExe when selector changes
- var sel=document.getElementById('mpTarget');
- if(sel)sel.onchange=function(){_curExe=this.value;};
-}
-function filterCat(c){_mpCat=c;renderMarket();}
-async function searchMP(){
- var q=document.getElementById('mpSearchInput').value.trim();
- if(!q){_mpSearch='';renderMarket();return;}
- _mpSearch=q;
- // First filter local catalog
- renderMarket();
- // Then try PyPI for exact match
- st('Searching PyPI for "'+q+'"...');
- try{var r=await api().SearchMarketplace(q);
-  if(r&&r.length>0){
-   // Add PyPI results to top of catalog if not already there
-   var names={};_mpData.forEach(function(p){names[p.name.toLowerCase()]=true;});
-   r.forEach(function(p){if(!names[p.name.toLowerCase()]){p.category='PyPI';_mpData.unshift(p);}});
-   renderMarket();st('Found on PyPI: '+r[0].name);
-  }else{st('No exact match on PyPI for "'+q+'"');}
- }catch(e){st('PyPI search failed');}}
-async function installFromMP(name){
- var target=document.getElementById('mpTarget');
- var exe=target?target.value:_curExe;
- if(!exe){alert('No Python selected. Scan first and select a target.');return;}
- if(!confirm('Install "'+name+'" into selected Python?'))return;
- st('Installing '+name+'...');
- try{var r=await api().InstallPackage(exe,name);st(r);}catch(e){st('Error: '+e);}}
-function fmtStars(n){if(n>=1000)return(n/1000).toFixed(1)+'k stars';return n+' stars';}
+      h += '<div style="font-size:11px;color:var(--text3);margin-bottom:8px">' + filtered.length + ' packages</div>';
+      h += '<div class="mp-grid">';
+      filtered.slice(0, 60).forEach(function (p) {
+        var installName = p.pypiId || p.name;
+        h += '<div class="mp-card">';
+        h += '<div style="display:flex;justify-content:space-between;align-items:start">';
+        h += '<div class="mp-name">' + esc(p.name) + '</div>';
+        if (p.stars > 0) h += '<span style="font-size:10px;color:var(--text3)">' + fmtStars(p.stars) + '</span>';
+        h += '</div>';
+        h += '<div class="mp-sum">' + esc(p.description) + '</div>';
+        h += '<div class="mp-meta"><span class="mp-cat-tag">' + esc(p.category) + '</span>';
+        h += '<button class="btn sm primary" onclick="event.stopPropagation();installFromMP(\'' + esc(installName) + '\')">Install</button>';
+        h += '</div></div>';
+      });
+      if (filtered.length > 60) h += '<div style="padding:20px;text-align:center;color:var(--text3);grid-column:1/-1">Showing first 60 of ' + filtered.length + '. Use search to narrow down.</div>';
+      h += '</div>'; el.innerHTML = h;
+      // Update _curExe when selector changes
+      var sel = document.getElementById('mpTarget');
+      if (sel) sel.onchange = function () { _curExe = this.value; };
+    }
+    function filterCat(c) { _mpCat = c; renderMarket(); }
+    async function searchMP() {
+      var q = document.getElementById('mpSearchInput').value.trim();
+      if (!q) { _mpSearch = ''; renderMarket(); return; }
+      _mpSearch = q;
+      // First filter local catalog
+      renderMarket();
+      // Then try PyPI for exact match
+      st('Searching PyPI for "' + q + '"...');
+      try {
+        var r = await api().SearchMarketplace(q);
+        if (r && r.length > 0) {
+          // Add PyPI results to top of catalog if not already there
+          var names = {}; _mpData.forEach(function (p) { names[p.name.toLowerCase()] = true; });
+          r.forEach(function (p) { if (!names[p.name.toLowerCase()]) { p.category = 'PyPI'; _mpData.unshift(p); } });
+          renderMarket(); st('Found on PyPI: ' + r[0].name);
+        } else { st('No exact match on PyPI for "' + q + '"'); }
+      } catch (e) { st('PyPI search failed'); }
+    }
+    async function installFromMP(name) {
+      var target = document.getElementById('mpTarget');
+      var exe = target ? target.value : _curExe;
+      if (!exe) { alert('No Python selected. Scan first and select a target.'); return; }
+      if (!confirm('Install "' + name + '" into selected Python?')) return;
+      st('Installing ' + name + '...');
+      try { var r = await api().InstallPackage(exe, name); st(r); } catch (e) { st('Error: ' + e); }
+    }
+    function fmtStars(n) { if (n >= 1000) return (n / 1000).toFixed(1) + 'k stars'; return n + ' stars'; }
 
-// --- Python Versions ---
-async function renderVersions(){
- var el=document.getElementById('tVersions');
- el.innerHTML='<div class="loading">Loading Python versions from uv...</div>';
- try{var vers=await api().ListPythonVersions();
-  if(!vers||vers.length===0){el.innerHTML='<div class="empty">No versions found. Is uv installed?</div>';return;}
-  var installed=vers.filter(function(v){return v.installed;});
-  var available=vers.filter(function(v){return!v.installed;});
-  var h='';
-  // Installed
-  h+='<div style="margin-bottom:20px"><div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Installed ('+installed.length+')</div>';
-  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">';
-  installed.forEach(function(v){
-   h+='<div class="tbl" style="padding:14px;display:flex;justify-content:space-between;align-items:center">';
-   h+='<div><div style="font-weight:700;font-size:15px">Python '+v.version+'</div>';
-   h+='<div class="mono" style="margin-top:2px" title="'+esc(v.path)+'">'+esc(shortPath(v.path))+'</div></div>';
-   h+='<button class="btn sm danger" onclick="uninstallVer(\''+v.version+'\')">Remove</button>';
-   h+='</div>';
-  });
-  h+='</div></div>';
-  // Available
-  h+='<div><div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Available to Install ('+available.length+')</div>';
-  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">';
-  available.forEach(function(v){
-   var mm=v.version.split('.').slice(0,2).join('.');
-   h+='<div class="tbl" style="padding:14px;display:flex;justify-content:space-between;align-items:center">';
-   h+='<div style="font-weight:700;font-size:15px">Python '+v.version+'</div>';
-   h+='<button class="btn sm primary" onclick="installVer(\''+mm+'\')">Install</button>';
-   h+='</div>';
-  });
-  h+='</div></div>';
-  el.innerHTML=h;
- }catch(e){el.innerHTML='<div class="empty">Failed to load versions: '+e+'</div>';}}
-async function installVer(v){st('Installing Python '+v+'...');
- try{var r=await api().InstallPythonVersion(v);st(r);renderVersions();}catch(e){st('Error: '+e);}}
-async function uninstallVer(v){if(!confirm('Remove Python '+v+'?'))return;st('Removing Python '+v+'...');
- try{var r=await api().UninstallPythonVersion(v);st(r);renderVersions();}catch(e){st('Error: '+e);}}
-function shortPath(p){if(!p)return'';if(p.length>40)return'...'+p.slice(-37);return p;}
+    // --- Python Versions ---
+    async function renderVersions() {
+      var el = document.getElementById('tVersions');
+      el.innerHTML = '<div class="loading">Loading Python versions from uv...</div>';
+      try {
+        var vers = await api().ListPythonVersions();
+        if (!vers || vers.length === 0) { el.innerHTML = '<div class="empty">No versions found. Is uv installed?</div>'; return; }
+        var installed = vers.filter(function (v) { return v.installed; });
+        var available = vers.filter(function (v) { return !v.installed; });
+        var h = '';
+        // Installed
+        h += '<div style="margin-bottom:20px"><div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Installed (' + installed.length + ')</div>';
+        h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">';
+        installed.forEach(function (v) {
+          h += '<div class="tbl" style="padding:14px;display:flex;justify-content:space-between;align-items:center">';
+          h += '<div><div style="font-weight:700;font-size:15px">Python ' + v.version + '</div>';
+          h += '<div class="mono" style="margin-top:2px" title="' + esc(v.path) + '">' + esc(shortPath(v.path)) + '</div></div>';
+          h += '<button class="btn sm danger" onclick="uninstallVer(\'' + v.version + '\')">Remove</button>';
+          h += '</div>';
+        });
+        h += '</div></div>';
+        // Available
+        h += '<div><div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Available to Install (' + available.length + ')</div>';
+        h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">';
+        available.forEach(function (v) {
+          var mm = v.version.split('.').slice(0, 2).join('.');
+          h += '<div class="tbl" style="padding:14px;display:flex;justify-content:space-between;align-items:center">';
+          h += '<div style="font-weight:700;font-size:15px">Python ' + v.version + '</div>';
+          h += '<button class="btn sm primary" onclick="installVer(\'' + mm + '\')">Install</button>';
+          h += '</div>';
+        });
+        h += '</div></div>';
+        el.innerHTML = h;
+      } catch (e) { el.innerHTML = '<div class="empty">Failed to load versions: ' + e + '</div>'; }
+    }
+    async function installVer(v) {
+      st('Installing Python ' + v + '...');
+      try { var r = await api().InstallPythonVersion(v); st(r); renderVersions(); } catch (e) { st('Error: ' + e); }
+    }
+    async function uninstallVer(v) {
+      if (!confirm('Remove Python ' + v + '?')) return; st('Removing Python ' + v + '...');
+      try { var r = await api().UninstallPythonVersion(v); st(r); renderVersions(); } catch (e) { st('Error: ' + e); }
+    }
+    function shortPath(p) { if (!p) return ''; if (p.length > 40) return '...' + p.slice(-37); return p; }
 
-// --- Add to PATH ---
-async function addToPath(){var e=_curExe;if(!e)return;
- try{var r=await api().AddToPATH(e);st(r);}catch(err){st('Error: '+err);}}
+    // --- Add to PATH ---
+    async function addToPath() {
+      var e = _curExe; if (!e) return;
+      try { var r = await api().AddToPATH(e); st(r); } catch (err) { st('Error: ' + err); }
+    }
 
-// --- Tools Tab ---
-function renderTools(){
- var el=document.getElementById('tTools');
- var inst=(S&&S.installations)||[];
- var pyOpts='';
- inst.forEach(function(i){if(i.Source!=='Virtual Environment')pyOpts+='<option value="'+esc(i.Executable)+'">Python '+i.Version+' ('+esc(i.Source)+')</option>';});
- var h='';
- // Create Venv
- h+='<div class="tbl" style="padding:20px;margin-bottom:16px">';
- h+='<div style="font-size:14px;font-weight:700;margin-bottom:12px">Create Virtual Environment</div>';
- h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
- h+='<div><label style="font-size:11px;color:var(--text2);font-weight:600">Python Version</label>';
- h+='<select id="venvPy" class="input" style="margin-top:4px">'+pyOpts+'</select></div>';
- h+='<div><label style="font-size:11px;color:var(--text2);font-weight:600">Venv Name</label>';
- h+='<input id="venvName" class="input" placeholder=".venv" value=".venv" style="margin-top:4px"></div>';
- h+='</div>';
- h+='<div style="margin-top:10px"><label style="font-size:11px;color:var(--text2);font-weight:600">Target Directory</label>';
- h+='<input id="venvDir" class="input" placeholder="C:\\Users\\you\\project" style="margin-top:4px"></div>';
- h+='<button class="btn primary" style="margin-top:12px" onclick="createVenv()">Create Venv</button>';
- h+='</div>';
- // Export / Import
- h+='<div class="tbl" style="padding:20px;margin-bottom:16px">';
- h+='<div style="font-size:14px;font-weight:700;margin-bottom:12px">Export / Import Environment</div>';
- h+='<div style="font-size:12px;color:var(--text2);margin-bottom:12px">Export your Python setup to JSON. Import on a new machine to see what needs installing.</div>';
- h+='<div style="display:flex;gap:8px">';
- h+='<button class="btn" onclick="exportEnv()">Export Environment</button>';
- h+='<button class="btn" onclick="importEnv()">Import Environment</button>';
- h+='</div>';
- h+='<pre id="exportResult" style="display:none;margin-top:12px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);font-size:11px;max-height:300px;overflow:auto;white-space:pre-wrap;font-family:monospace"></pre>';
- h+='</div>';
- // Update Check
- h+='<div class="tbl" style="padding:20px">';
- h+='<div style="font-size:14px;font-weight:700;margin-bottom:12px">Check for Updates</div>';
- h+='<div id="updateResult" style="font-size:12px;color:var(--text2)">Click to check for new versions.</div>';
- h+='<button class="btn" style="margin-top:10px" onclick="checkUpdate()">Check Now</button>';
- h+='</div>';
- el.innerHTML=h;
-}
-async function createVenv(){
- var py=document.getElementById('venvPy').value;
- var dir=document.getElementById('venvDir').value;
- var name=document.getElementById('venvName').value;
- if(!py){st('Select a Python version');return;}
- if(!dir){st('Enter target directory');return;}
- st('Creating venv...');
- try{var r=await api().CreateVenv(py,dir,name);
-  if(r.success){st('Created: '+r.path);renderTools();}
-  else{st('Failed: '+r.message);}
- }catch(e){st('Error: '+e);}
-}
-async function exportEnv(){
- st('Exporting environment...');
- try{var json=await api().ExportEnvironment();
-  var pre=document.getElementById('exportResult');
-  pre.style.display='block';pre.textContent=json;
-  st('Exported. Copy the JSON above.');
- }catch(e){st('Error: '+e);}
-}
-async function importEnv(){
- var json=prompt('Paste exported JSON:');
- if(!json)return;
- try{var r=await api().ImportEnvironment(json);
-  alert(r);st('Import complete');
- }catch(e){st('Error: '+e);}
-}
-async function checkUpdate(){
- st('Checking for updates...');
- try{var u=await api().CheckForUpdate();
-  var el=document.getElementById('updateResult');
-  if(u.hasUpdate){
-   el.innerHTML='<div class="alert alert-warn">New version <b>v'+esc(u.latestVersion)+'</b> available! Current: v'+esc(u.currentVersion)+
-    ' <a href="'+esc(u.updateUrl)+'" target="_blank" style="color:var(--blue);font-weight:600">Download</a></div>';
-   st('Update available: v'+u.latestVersion);
-  }else{
-   el.innerHTML='<div class="alert alert-ok">You are on the latest version (v'+esc(u.currentVersion)+').</div>';
-   st('Up to date');
-  }
- }catch(e){st('Error checking: '+e);}
-}
+    // --- Tools Tab ---
+    var scanCfg = null;
+    async function loadScanCfg() {
+      try { scanCfg = await api().GetVenvScanConfig(); } catch (e) { scanCfg = { paths: [], fullHomeScan: false }; }
+    }
+    async function renderTools() {
+      var el = document.getElementById('tTools');
+      if (!scanCfg) await loadScanCfg();
+      var inst = (S && S.installations) || [];
+      var pyOpts = '';
+      inst.forEach(function (i) { if (i.Source !== 'Virtual Environment') pyOpts += '<option value="' + esc(i.Executable) + '">Python ' + i.Version + ' (' + esc(i.Source) + ')</option>'; });
+      var h = '';
+      // Venv Scan Paths
+      h += '<div class="tbl" style="padding:20px;margin-bottom:16px">';
+      h += '<div style="font-size:14px;font-weight:700;margin-bottom:4px">Venv Scan Directories</div>';
+      h += '<div style="font-size:12px;color:var(--text2);margin-bottom:12px">Add custom directories to scan for virtual environments, or enable full home scan.</div>';
+      h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">';
+      h += '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600">';
+      h += '<input type="checkbox" id="fullHomeScan" ' + (scanCfg.fullHomeScan ? 'checked' : '') + ' onchange="toggleFullScan(this.checked)" style="accent-color:var(--blue)">';
+      h += 'Scan entire home directory</label>';
+      h += '<span style="font-size:11px;color:var(--text3)">(slower but finds all venvs)</span>';
+      h += '</div>';
+      var paths = (scanCfg && scanCfg.paths) || [];
+      if (paths.length > 0) {
+        h += '<div style="margin-bottom:10px">';
+        paths.forEach(function (p) {
+          h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:4px;font-size:12px">';
+          h += '<span style="flex:1;font-family:monospace">' + esc(p) + '</span>';
+          h += '<button class="btn" style="padding:4px 10px;font-size:11px" onclick="removeScanPath(\'' + esc(p).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\')">Remove</button>';
+          h += '</div>';
+        });
+        h += '</div>';
+      }
+      h += '<div style="display:flex;gap:8px;align-items:center">';
+      h += '<input id="newScanPath" class="input" placeholder="C:\\Users\\you\\projects" style="flex:1">';
+      h += '<button class="btn primary" onclick="addScanPath()">Add Path</button>';
+      h += '</div>';
+      h += '</div>';
+      // Create Venv
+      h += '<div class="tbl" style="padding:20px;margin-bottom:16px">';
+      h += '<div style="font-size:14px;font-weight:700;margin-bottom:12px">Create Virtual Environment</div>';
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+      h += '<div><label style="font-size:11px;color:var(--text2);font-weight:600">Python Version</label>';
+      h += '<select id="venvPy" class="input" style="margin-top:4px">' + pyOpts + '</select></div>';
+      h += '<div><label style="font-size:11px;color:var(--text2);font-weight:600">Venv Name</label>';
+      h += '<input id="venvName" class="input" placeholder=".venv" value=".venv" style="margin-top:4px"></div>';
+      h += '</div>';
+      h += '<div style="margin-top:10px"><label style="font-size:11px;color:var(--text2);font-weight:600">Target Directory</label>';
+      h += '<input id="venvDir" class="input" placeholder="C:\\Users\\you\\project" style="margin-top:4px"></div>';
+      h += '<button class="btn primary" style="margin-top:12px" onclick="createVenv()">Create Venv</button>';
+      h += '</div>';
+      // Export / Import
+      h += '<div class="tbl" style="padding:20px;margin-bottom:16px">';
+      h += '<div style="font-size:14px;font-weight:700;margin-bottom:12px">Export / Import Environment</div>';
+      h += '<div style="font-size:12px;color:var(--text2);margin-bottom:12px">Export your Python setup to JSON. Import on a new machine to see what needs installing.</div>';
+      h += '<div style="display:flex;gap:8px">';
+      h += '<button class="btn" onclick="exportEnv()">Export Environment</button>';
+      h += '<button class="btn" onclick="importEnv()">Import Environment</button>';
+      h += '</div>';
+      h += '<pre id="exportResult" style="display:none;margin-top:12px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);font-size:11px;max-height:300px;overflow:auto;white-space:pre-wrap;font-family:monospace"></pre>';
+      h += '</div>';
+      // Update Check
+      h += '<div class="tbl" style="padding:20px">';
+      h += '<div style="font-size:14px;font-weight:700;margin-bottom:12px">Check for Updates</div>';
+      h += '<div id="updateResult" style="font-size:12px;color:var(--text2)">Click to check for new versions.</div>';
+      h += '<button class="btn" style="margin-top:10px" onclick="checkUpdate()">Check Now</button>';
+      h += '</div>';
+      el.innerHTML = h;
+    }
+    async function addScanPath() {
+      var p = document.getElementById('newScanPath').value.trim();
+      if (!p) { st('Enter a directory path'); return; }
+      st('Adding path...');
+      try {
+        var r = await api().AddVenvScanPath(p);
+        if (r === 'OK') { await loadScanCfg(); renderTools(); st('Added: ' + p + ' — Re-scan to detect venvs'); }
+        else { st(r); }
+      } catch (e) { st('Error: ' + e); }
+    }
+    async function removeScanPath(p) {
+      st('Removing path...');
+      try {
+        var r = await api().RemoveVenvScanPath(p);
+        if (r === 'OK') { await loadScanCfg(); renderTools(); st('Removed: ' + p); }
+        else { st(r); }
+      } catch (e) { st('Error: ' + e); }
+    }
+    async function toggleFullScan(enabled) {
+      try {
+        var r = await api().SetFullHomeScan(enabled);
+        if (r === 'OK') { scanCfg.fullHomeScan = enabled; st(enabled ? 'Full home scan enabled — Re-scan to apply' : 'Full home scan disabled'); }
+        else { st(r); }
+      } catch (e) { st('Error: ' + e); }
+    }
+    async function createVenv() {
+      var py = document.getElementById('venvPy').value;
+      var dir = document.getElementById('venvDir').value;
+      var name = document.getElementById('venvName').value;
+      if (!py) { st('Select a Python version'); return; }
+      if (!dir) { st('Enter target directory'); return; }
+      st('Creating venv...');
+      try {
+        var r = await api().CreateVenv(py, dir, name);
+        if (r.success) { st('Created: ' + r.path); renderTools(); }
+        else { st('Failed: ' + r.message); }
+      } catch (e) { st('Error: ' + e); }
+    }
+    async function exportEnv() {
+      st('Exporting environment...');
+      try {
+        var json = await api().ExportEnvironment();
+        var pre = document.getElementById('exportResult');
+        pre.style.display = 'block'; pre.textContent = json;
+        st('Exported. Copy the JSON above.');
+      } catch (e) { st('Error: ' + e); }
+    }
+    async function importEnv() {
+      var json = prompt('Paste exported JSON:');
+      if (!json) return;
+      try {
+        var r = await api().ImportEnvironment(json);
+        alert(r); st('Import complete');
+      } catch (e) { st('Error: ' + e); }
+    }
+    async function checkUpdate() {
+      st('Checking for updates...');
+      try {
+        var u = await api().CheckForUpdate();
+        var el = document.getElementById('updateResult');
+        if (u.hasUpdate) {
+          el.innerHTML = '<div class="alert alert-warn">New version <b>v' + esc(u.latestVersion) + '</b> available! Current: v' + esc(u.currentVersion) +
+            ' <a href="' + esc(u.updateUrl) + '" target="_blank" style="color:var(--blue);font-weight:600">Download</a></div>';
+          st('Update available: v' + u.latestVersion);
+        } else {
+          el.innerHTML = '<div class="alert alert-ok">You are on the latest version (v' + esc(u.currentVersion) + ').</div>';
+          st('Up to date');
+        }
+      } catch (e) { st('Error checking: ' + e); }
+    }
 
-function closeSP(){selExe=null;document.getElementById('sp').classList.remove('open');if(S)renderInst();}
-function ck(v){return v?'<span class="hok">&#10003;</span>':'<span class="hbad">&#10007;</span>';}
-function sr(k,v){return'<div class="spr"><span class="k">'+k+'</span><span class="vl">'+v+'</span></div>';}
-function bc(s){return{'uv':'badge-uv','Official Installer':'badge-official','System / Official':'badge-official','pyenv':'badge-pyenv','pyenv-win':'badge-pyenv','Conda/Miniconda':'badge-conda','Chocolatey':'badge-chocolatey','Microsoft Store':'badge-store','Scoop':'badge-scoop','Virtual Environment':'badge-venv','Homebrew':'badge-homebrew','System':'badge-system','IDE Config':'badge-ide'}[s]||'';}
-function fmtSize(b){if(!b)return'0 B';var u=['B','KB','MB','GB'],i=0,s=b;while(s>=1024&&i<3){s/=1024;i++;}return s.toFixed(1)+' '+u[i];}
-function esc(s){if(!s)return'';var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-function st(m){document.getElementById('status').textContent=m;}
-function show(id){document.getElementById(id).style.display='block';}
-function hide(id){document.getElementById(id).style.display='none';}
-</script>
+    function closeSP() { selExe = null; document.getElementById('sp').classList.remove('open'); if (S) renderInst(); }
+    function ck(v) { return v ? '<span class="hok">&#10003;</span>' : '<span class="hbad">&#10007;</span>'; }
+    function sr(k, v) { return '<div class="spr"><span class="k">' + k + '</span><span class="vl">' + v + '</span></div>'; }
+    function bc(s) { return { 'uv': 'badge-uv', 'Official Installer': 'badge-official', 'System / Official': 'badge-official', 'pyenv': 'badge-pyenv', 'pyenv-win': 'badge-pyenv', 'Conda/Miniconda': 'badge-conda', 'Chocolatey': 'badge-chocolatey', 'Microsoft Store': 'badge-store', 'Scoop': 'badge-scoop', 'Virtual Environment': 'badge-venv', 'Homebrew': 'badge-homebrew', 'System': 'badge-system', 'IDE Config': 'badge-ide' }[s] || ''; }
+    function fmtSize(b) { if (!b) return '0 B'; var u = ['B', 'KB', 'MB', 'GB'], i = 0, s = b; while (s >= 1024 && i < 3) { s /= 1024; i++; } return s.toFixed(1) + ' ' + u[i]; }
+    function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    function st(m) { document.getElementById('status').textContent = m; }
+    function show(id) { document.getElementById(id).style.display = 'block'; }
+    function hide(id) { document.getElementById(id).style.display = 'none'; }
+  </script>
 </body>
+
 </html>
