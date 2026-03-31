@@ -10,7 +10,6 @@ import (
 )
 
 // Scanner orchestrates all detectors and produces a unified result.
-// Wails will bind this and expose its methods to the frontend.
 type Scanner struct {
 	detectors []Detector
 	OnStatus  func(msg string)
@@ -21,6 +20,7 @@ func NewScanner() *Scanner {
 	return &Scanner{
 		detectors: []Detector{
 			OfficialDetector{},
+			HomebrewDetector{},
 			UVDetector{},
 			PyenvDetector{},
 			CondaDetector{},
@@ -28,12 +28,12 @@ func NewScanner() *Scanner {
 			ScoopDetector{},
 			StoreDetector{},
 			VenvDetector{},
+			IDEDetector{},
 		},
 	}
 }
 
 // Scan runs all detectors and returns merged results.
-// This method is called from the frontend via Wails binding.
 func (s *Scanner) Scan() *models.ScanResult {
 	start := time.Now()
 
@@ -83,7 +83,10 @@ func (s *Scanner) Scan() *models.ScanResult {
 }
 
 func markDefault(installs []models.PythonInstallation) []models.PythonInstallation {
-	defaultVersion := GetPythonVersion("python")
+	defaultVersion := GetPythonVersion("python3")
+	if defaultVersion == "" {
+		defaultVersion = GetPythonVersion("python")
+	}
 	if defaultVersion == "" {
 		return installs
 	}

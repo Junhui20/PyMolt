@@ -3,6 +3,7 @@ package detector
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/Junhui20/PyMolt/internal/models"
 )
@@ -14,17 +15,8 @@ func (d CondaDetector) Name() string { return "Conda" }
 
 func (d CondaDetector) Detect() []models.PythonInstallation {
 	var results []models.PythonInstallation
-	home := os.Getenv("USERPROFILE")
 
-	// Known conda base locations
-	bases := []string{
-		filepath.Join(home, "anaconda3"),
-		filepath.Join(home, "miniconda3"),
-		filepath.Join(home, "miniforge3"),
-		`C:\ProgramData\anaconda3`,
-		`C:\ProgramData\miniconda3`,
-		os.Getenv("CONDA_PREFIX"),
-	}
+	bases := condaBases()
 
 	for _, base := range bases {
 		if base == "" {
@@ -32,6 +24,9 @@ func (d CondaDetector) Detect() []models.PythonInstallation {
 		}
 		// Check base environment
 		inst := MakeInstallation(base, models.SourceConda)
+		if inst == nil && runtime.GOOS != "windows" {
+			inst = MakeInstallation(filepath.Join(base, "bin"), models.SourceConda)
+		}
 		if inst != nil {
 			results = append(results, *inst)
 		}
@@ -47,10 +42,38 @@ func (d CondaDetector) Detect() []models.PythonInstallation {
 			}
 			envDir := filepath.Join(envsDir, entry.Name())
 			inst := MakeInstallation(envDir, models.SourceConda)
+			if inst == nil && runtime.GOOS != "windows" {
+				inst = MakeInstallation(filepath.Join(envDir, "bin"), models.SourceConda)
+			}
 			if inst != nil {
 				results = append(results, *inst)
 			}
 		}
 	}
 	return results
+}
+
+func condaBases() []string {
+	home := HomeDir()
+	bases := []string{
+		filepath.Join(home, "anaconda3"),
+		filepath.Join(home, "miniconda3"),
+		filepath.Join(home, "miniforge3"),
+		os.Getenv("CONDA_PREFIX"),
+	}
+
+	if runtime.GOOS == "windows" {
+		bases = append(bases,
+			`C:\ProgramData\anaconda3`,
+			`C:\ProgramData\miniconda3`,
+		)
+	} else {
+		bases = append(bases,
+			"/opt/anaconda3",
+			"/opt/miniconda3",
+			"/opt/miniforge3",
+		)
+	}
+
+	return bases
 }

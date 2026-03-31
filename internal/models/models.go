@@ -10,13 +10,16 @@ type PythonSource string
 
 const (
 	SourceOfficial   PythonSource = "Official Installer"
-	SourcePyenv      PythonSource = "pyenv-win"
+	SourcePyenv      PythonSource = "pyenv"
 	SourceConda      PythonSource = "Conda/Miniconda"
 	SourceUV         PythonSource = "uv"
 	SourceChocolatey PythonSource = "Chocolatey"
 	SourceScoop      PythonSource = "Scoop"
 	SourceStore      PythonSource = "Microsoft Store"
+	SourceHomebrew   PythonSource = "Homebrew"
+	SourceSystem     PythonSource = "System"
 	SourceVenv       PythonSource = "Virtual Environment"
+	SourceIDE        PythonSource = "IDE Config"
 	SourceUnknown    PythonSource = "Unknown"
 )
 

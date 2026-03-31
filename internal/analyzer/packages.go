@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -29,7 +28,7 @@ func ListPackages(executable string) ([]Package, error) {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, executable, "-m", "pip", "list", "--format=json", "--disable-pip-version-check")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	hideWindow(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, err
@@ -48,7 +47,7 @@ func ListOutdated(executable string) ([]OutdatedPackage, error) {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, executable, "-m", "pip", "list", "--outdated", "--format=json", "--disable-pip-version-check")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	hideWindow(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, err
@@ -80,7 +79,7 @@ func InstallPackage(executable, packageName string) (string, error) {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, executable, "-m", "pip", "install", packageName, "--disable-pip-version-check")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	hideWindow(cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("%s: %s", err, string(out))
@@ -94,7 +93,7 @@ func UninstallPackage(executable, packageName string) (string, error) {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, executable, "-m", "pip", "uninstall", packageName, "-y", "--disable-pip-version-check")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	hideWindow(cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("%s: %s", err, string(out))
@@ -108,7 +107,7 @@ func ExportRequirements(executable string) (string, error) {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, executable, "-m", "pip", "freeze", "--disable-pip-version-check")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	hideWindow(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return "", err

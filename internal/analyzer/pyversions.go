@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -22,7 +21,7 @@ func ListPythonVersions() ([]PythonVersion, error) {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "uv", "python", "list")
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	hideWindow(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, err
@@ -37,29 +36,23 @@ func ListPythonVersions() ([]PythonVersion, error) {
 			continue
 		}
 
-		// Format: "cpython-3.13.9-windows-x86_64-none     C:\path\to\python.exe"
-		// or:     "cpython-3.13.9-windows-x86_64-none     <download available>"
 		parts := strings.Fields(line)
 		if len(parts) < 2 {
 			continue
 		}
 
 		id := parts[0]
-		// Extract version from "cpython-3.13.9-windows-x86_64-none"
 		idParts := strings.Split(id, "-")
 		if len(idParts) < 2 {
 			continue
 		}
 		ver := idParts[1]
 
-		// Skip freethreaded and non-standard builds
 		if strings.Contains(id, "freethreaded") {
 			continue
 		}
 
-		// Only keep one entry per major.minor (prefer installed)
 		majorMinor := extractMajorMinor(ver)
-
 		installed := !strings.Contains(line, "<download available>")
 		path := ""
 		if installed {
@@ -67,7 +60,6 @@ func ListPythonVersions() ([]PythonVersion, error) {
 		}
 
 		if seen[majorMinor] {
-			// Update if this one is installed and the previous wasn't
 			for i, v := range versions {
 				if extractMajorMinor(v.Version) == majorMinor && !v.Installed && installed {
 					versions[i].Installed = true
@@ -103,7 +95,7 @@ func InstallPythonVersion(version string) (string, error) {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "uv", "python", "install", version)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	hideWindow(cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("%s", strings.TrimSpace(string(out)))
@@ -117,7 +109,7 @@ func UninstallPythonVersion(version string) (string, error) {
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "uv", "python", "uninstall", version)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
+	hideWindow(cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("%s", strings.TrimSpace(string(out)))

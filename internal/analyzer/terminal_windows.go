@@ -1,3 +1,5 @@
+//go:build windows
+
 package analyzer
 
 import (
@@ -5,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"syscall"
 
 	"github.com/Junhui20/PyMolt/internal/models"
 )
@@ -23,7 +24,6 @@ func OpenTerminal(inst models.PythonInstallation) error {
 		cmd.Dir = filepath.Dir(inst.Path)
 		cmd.Args = []string{"cmd", "/k", activateScript}
 	} else {
-		// Write a temp bat file to safely set PATH without shell injection
 		batContent := fmt.Sprintf("@echo off\r\ntitle Python %s\r\nset \"PATH=%s;%%PATH%%\"\r\npython --version\r\n",
 			inst.Version, inst.Path)
 		batFile := filepath.Join(os.TempDir(), "pymanager_term.bat")
@@ -33,10 +33,7 @@ func OpenTerminal(inst models.PythonInstallation) error {
 		cmd = exec.Command("cmd", "/k", batFile)
 	}
 
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		CreationFlags: 0x00000010, // CREATE_NEW_CONSOLE
-	}
-
+	newConsole(cmd)
 	return cmd.Start()
 }
 

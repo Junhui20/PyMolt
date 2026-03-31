@@ -3,25 +3,20 @@ package detector
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/Junhui20/PyMolt/internal/models"
 )
 
-// PyenvDetector finds Python versions installed by pyenv-win.
+// PyenvDetector finds Python versions installed by pyenv (or pyenv-win).
 type PyenvDetector struct{}
 
-func (d PyenvDetector) Name() string { return "pyenv-win" }
+func (d PyenvDetector) Name() string { return "pyenv" }
 
 func (d PyenvDetector) Detect() []models.PythonInstallation {
 	var results []models.PythonInstallation
 
-	// Check PYENV, PYENV_ROOT, PYENV_HOME env vars, fallback to default
-	roots := []string{
-		os.Getenv("PYENV"),
-		os.Getenv("PYENV_ROOT"),
-		os.Getenv("PYENV_HOME"),
-		filepath.Join(os.Getenv("USERPROFILE"), ".pyenv", "pyenv-win"),
-	}
+	roots := pyenvRoots()
 
 	for _, root := range roots {
 		if root == "" {
@@ -37,7 +32,12 @@ func (d PyenvDetector) Detect() []models.PythonInstallation {
 				continue
 			}
 			dir := filepath.Join(versionsDir, entry.Name())
+			// On Unix, python is in <version>/bin/; MakeInstallation handles this
 			inst := MakeInstallation(dir, models.SourcePyenv)
+			if inst == nil {
+				// Try bin/ subdirectory (Unix layout)
+				inst = MakeInstallation(filepath.Join(dir, "bin"), models.SourcePyenv)
+			}
 			if inst != nil {
 				results = append(results, *inst)
 			}
@@ -45,4 +45,20 @@ func (d PyenvDetector) Detect() []models.PythonInstallation {
 		break // only use first valid root
 	}
 	return results
+}
+
+func pyenvRoots() []string {
+	roots := []string{
+		os.Getenv("PYENV"),
+		os.Getenv("PYENV_ROOT"),
+		os.Getenv("PYENV_HOME"),
+	}
+
+	if runtime.GOOS == "windows" {
+		roots = append(roots, filepath.Join(HomeDir(), ".pyenv", "pyenv-win"))
+	} else {
+		roots = append(roots, filepath.Join(HomeDir(), ".pyenv"))
+	}
+
+	return roots
 }

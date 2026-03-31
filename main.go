@@ -8,7 +8,6 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	"github.com/wailsapp/wails/v2/pkg/options/windows"
 
 	"github.com/Junhui20/PyMolt/internal"
 	"github.com/Junhui20/PyMolt/internal/cli"
@@ -26,7 +25,7 @@ func main() {
 	// GUI mode
 	app := internal.NewApp()
 
-	err := wails.Run(&options.App{
+	appOpts := &options.App{
 		Title:     "PyMolt",
 		Width:     1100,
 		Height:    750,
@@ -39,13 +38,12 @@ func main() {
 		Bind: []interface{}{
 			app,
 		},
-		Windows: &windows.Options{
-			WebviewIsTransparent: false,
-			WindowIsTranslucent:  false,
-			Theme:                windows.Light,
-		},
-	})
+	}
 
+	// Apply platform-specific options
+	applyPlatformOptions(appOpts)
+
+	err := wails.Run(appOpts)
 	if err != nil {
 		log.Fatal(err)
 	}

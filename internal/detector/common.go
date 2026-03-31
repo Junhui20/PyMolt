@@ -6,21 +6,20 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/Junhui20/PyMolt/internal/models"
 )
 
-// hideWindow sets SysProcAttr to hide console windows on Windows.
-func hideWindow(cmd *exec.Cmd) {
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		HideWindow:    true,
-		CreationFlags: 0x08000000, // CREATE_NO_WINDOW
-	}
+// hideWindow, findExecutable, pythonExeNames, venvScriptsDir, activateScript
+// are defined in common_windows.go / common_unix.go
+
+// FindExecutable is the exported wrapper for findExecutable.
+func FindExecutable(dir string) string {
+	return findExecutable(dir)
 }
 
-// GetPythonVersion runs python.exe --version and returns the version string.
+// GetPythonVersion runs python --version and returns the version string.
 func GetPythonVersion(executable string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -59,17 +58,6 @@ func DirSize(path string) int64 {
 	return size
 }
 
-// FindExecutable looks for python.exe in a directory.
-func FindExecutable(dir string) string {
-	for _, name := range []string{"python.exe", "python3.exe"} {
-		p := filepath.Join(dir, name)
-		if _, err := os.Stat(p); err == nil {
-			return p
-		}
-	}
-	return ""
-}
-
 // GetArchitecture returns "64-bit" or "32-bit" based on the executable.
 func GetArchitecture(executable string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -101,7 +89,7 @@ func IsInPath(dir string) bool {
 
 // MakeInstallation builds a PythonInstallation from a directory.
 func MakeInstallation(dir string, source models.PythonSource) *models.PythonInstallation {
-	exe := FindExecutable(dir)
+	exe := findExecutable(dir)
 	if exe == "" {
 		return nil
 	}
@@ -114,9 +102,17 @@ func MakeInstallation(dir string, source models.PythonSource) *models.PythonInst
 		MajorMinor:   ExtractMajorMinor(version),
 		Path:         dir,
 		Executable:   exe,
-		Source:        source,
+		Source:       source,
 		SizeBytes:    DirSize(dir),
 		InPath:       IsInPath(dir),
 		Architecture: GetArchitecture(exe),
 	}
+}
+
+// HomeDir returns the user's home directory cross-platform.
+func HomeDir() string {
+	if h := os.Getenv("HOME"); h != "" {
+		return h
+	}
+	return os.Getenv("USERPROFILE")
 }

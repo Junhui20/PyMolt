@@ -3,6 +3,7 @@ package detector
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/Junhui20/PyMolt/internal/models"
 )
@@ -15,7 +16,7 @@ func (d UVDetector) Name() string { return "uv" }
 func (d UVDetector) Detect() []models.PythonInstallation {
 	var results []models.PythonInstallation
 
-	uvDir := filepath.Join(os.Getenv("APPDATA"), "uv", "python")
+	uvDir := uvPythonDir()
 	entries, err := os.ReadDir(uvDir)
 	if err != nil {
 		return nil
@@ -32,4 +33,15 @@ func (d UVDetector) Detect() []models.PythonInstallation {
 		}
 	}
 	return results
+}
+
+func uvPythonDir() string {
+	if runtime.GOOS == "windows" {
+		return filepath.Join(os.Getenv("APPDATA"), "uv", "python")
+	}
+	// Unix: ~/.local/share/uv/python
+	if xdg := os.Getenv("XDG_DATA_HOME"); xdg != "" {
+		return filepath.Join(xdg, "uv", "python")
+	}
+	return filepath.Join(HomeDir(), ".local", "share", "uv", "python")
 }
