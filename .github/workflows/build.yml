@@ -48,7 +48,7 @@ jobs:
       - name: Build
         run: |
           go mod tidy
-          CGO_ENABLED=1 go build -v -tags desktop,production -ldflags "-s -w" -o pymolt .
+          CGO_ENABLED=1 CGO_LDFLAGS="-framework UniformTypeIdentifiers" go build -tags desktop,production -ldflags "-s -w" -o pymolt .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
