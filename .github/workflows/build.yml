@@ -17,15 +17,15 @@ jobs:
         with:
           go-version: '1.26'
 
-      - name: Setup MinGW
-        uses: egor-tensin/setup-mingw@v2
-        with:
-          platform: x64
+      - name: Install MinGW
+        run: choco install mingw -y --no-progress
+        shell: pwsh
 
       - name: Build
         run: |
           go mod tidy
           $env:CGO_ENABLED=1
+          $env:CC="gcc"
           go build -tags desktop,production -ldflags "-H windowsgui -s -w" -o pymolt.exe .
         shell: pwsh
 
@@ -57,7 +57,7 @@ jobs:
           path: pymolt
 
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 

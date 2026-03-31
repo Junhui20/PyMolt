@@ -9,7 +9,6 @@ import (
 
 func applyPlatformOptions(opts *options.App) {
 	opts.Mac = &mac.Options{
-		TitleBar:             mac.TitleBarDefault(),
 		WebviewIsTransparent: false,
 		WindowIsTranslucent:  false,
 	}
