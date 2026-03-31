@@ -286,3 +286,28 @@ func (a *App) AddToPATH(executable string) string {
 	}
 	return "Added " + inst.Path + " to PATH (restart terminal to take effect)"
 }
+
+// --- Fix My Python ---
+
+func (a *App) GetFixReport() *analyzer.FixReport {
+	a.mu.RLock()
+	scan := a.lastScan
+	a.mu.RUnlock()
+	if scan == nil {
+		return &analyzer.FixReport{ScorePercent: 100}
+	}
+	return analyzer.GenerateFixReport(scan.Installations)
+}
+
+func (a *App) ExecuteFix(fixAction string) string {
+	switch fixAction {
+	case "repair_path":
+		return a.RepairPATH()
+	case "clean_cache":
+		r1 := analyzer.CleanPipCache()
+		r2 := analyzer.CleanUVCache()
+		return r1.Message + "; " + r2.Message
+	default:
+		return "Use the specific action buttons for this fix"
+	}
+}

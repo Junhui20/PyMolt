@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"log"
+	"os"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -10,16 +11,23 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 
 	"github.com/Junhui20/PyMolt/internal"
+	"github.com/Junhui20/PyMolt/internal/cli"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
 func main() {
+	// CLI mode: if args provided, run CLI and exit
+	if cli.Run(os.Args) {
+		return
+	}
+
+	// GUI mode
 	app := internal.NewApp()
 
 	err := wails.Run(&options.App{
-		Title:     "Python Manager",
+		Title:     "PyMolt",
 		Width:     1100,
 		Height:    750,
 		MinWidth:  900,
