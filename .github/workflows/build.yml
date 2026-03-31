@@ -10,10 +10,10 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.26'
 
@@ -30,7 +30,7 @@ jobs:
         shell: pwsh
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: pymolt-windows
           path: pymolt.exe
@@ -38,10 +38,10 @@ jobs:
   build-macos:
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.26'
 
@@ -51,7 +51,7 @@ jobs:
           CGO_ENABLED=1 CGO_LDFLAGS="-framework UniformTypeIdentifiers" go build -tags desktop,production -ldflags "-s -w" -o pymolt .
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: pymolt-macos
           path: pymolt
@@ -59,10 +59,10 @@ jobs:
   build-linux:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.26'
 
@@ -77,7 +77,7 @@ jobs:
           CGO_ENABLED=1 go build -tags desktop,production -ldflags "-s -w" -o pymolt .
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: pymolt-linux
           path: pymolt
@@ -88,22 +88,23 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: artifacts
 
       - name: Prepare release files
         run: |
-          mv artifacts/pymolt-windows/pymolt.exe artifacts/pymolt-windows.exe
-          mv artifacts/pymolt-macos/pymolt artifacts/pymolt-macos
-          mv artifacts/pymolt-linux/pymolt artifacts/pymolt-linux
-          chmod +x artifacts/pymolt-macos artifacts/pymolt-linux
+          ls -R artifacts/
+          cp artifacts/pymolt-windows/pymolt.exe pymolt-windows.exe
+          cp artifacts/pymolt-macos/pymolt pymolt-macos
+          cp artifacts/pymolt-linux/pymolt pymolt-linux
+          chmod +x pymolt-macos pymolt-linux
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/pymolt-windows.exe
-            artifacts/pymolt-macos
-            artifacts/pymolt-linux
+            pymolt-windows.exe
+            pymolt-macos
+            pymolt-linux
           generate_release_notes: true
