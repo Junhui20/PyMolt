@@ -28,7 +28,11 @@ func NewScanner() *Scanner {
 			ScoopDetector{},
 			StoreDetector{},
 			VenvDetector{},
+			AsdfDetector{},
+			MiseDetector{},
+			PipxDetector{},
 			IDEDetector{},
+			WhichDetector{}, // last: catches anything others missed
 		},
 	}
 }

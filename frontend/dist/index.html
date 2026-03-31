@@ -212,6 +212,7 @@ tr.sel td{background:var(--blue-light);border-color:rgba(59,130,246,.1)}
    <div id="tFix" class="tc"></div>
    <div id="tMarket" class="tc"></div>
    <div id="tVersions" class="tc"></div>
+   <div id="tTools" class="tc"></div>
   </div>
  </div>
  <div class="sp" id="sp"><div id="spc"></div></div>
@@ -245,13 +246,14 @@ function renderAll(){
   '<button class="tab" onclick="sw(\'Cache\',this)">Cache</button>'+
   '<button class="tab" onclick="sw(\'Fix\',this)">Fix My Python</button>'+
   '<button class="tab" onclick="sw(\'Market\',this)">Marketplace</button>'+
-  '<button class="tab" onclick="sw(\'Versions\',this)">Versions</button>';
+  '<button class="tab" onclick="sw(\'Versions\',this)">Versions</button>'+
+  '<button class="tab" onclick="sw(\'Tools\',this)">Tools</button>';
  renderInst();show('results');document.getElementById('tInstall').classList.add('active');
 }
 function stat(l,v,c){return'<div class="stat"><div class="l">'+l+'</div><div class="v '+c+'">'+v+'</div></div>';}
 function sw(n,el){document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});el.classList.add('active');
  document.querySelectorAll('.tc').forEach(function(t){t.classList.remove('active')});document.getElementById('t'+n).classList.add('active');
- if(n==='Health')renderHealth();if(n==='Path')renderPath();if(n==='Cache')renderCache();if(n==='Fix')renderFix();if(n==='Market')renderMarket();if(n==='Versions')renderVersions();}
+ if(n==='Health')renderHealth();if(n==='Path')renderPath();if(n==='Cache')renderCache();if(n==='Fix')renderFix();if(n==='Market')renderMarket();if(n==='Versions')renderVersions();if(n==='Tools')renderTools();}
 
 function renderInst(){
  var inst=(S.installations||[]).slice(),oset={};
@@ -498,6 +500,86 @@ function shortPath(p){if(!p)return'';if(p.length>40)return'...'+p.slice(-37);ret
 // --- Add to PATH ---
 async function addToPath(){var e=_curExe;if(!e)return;
  try{var r=await api().AddToPATH(e);st(r);}catch(err){st('Error: '+err);}}
+
+// --- Tools Tab ---
+function renderTools(){
+ var el=document.getElementById('tTools');
+ var inst=(S&&S.installations)||[];
+ var pyOpts='';
+ inst.forEach(function(i){if(i.Source!=='Virtual Environment')pyOpts+='<option value="'+esc(i.Executable)+'">Python '+i.Version+' ('+esc(i.Source)+')</option>';});
+ var h='';
+ // Create Venv
+ h+='<div class="tbl" style="padding:20px;margin-bottom:16px">';
+ h+='<div style="font-size:14px;font-weight:700;margin-bottom:12px">Create Virtual Environment</div>';
+ h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+ h+='<div><label style="font-size:11px;color:var(--text2);font-weight:600">Python Version</label>';
+ h+='<select id="venvPy" class="input" style="margin-top:4px">'+pyOpts+'</select></div>';
+ h+='<div><label style="font-size:11px;color:var(--text2);font-weight:600">Venv Name</label>';
+ h+='<input id="venvName" class="input" placeholder=".venv" value=".venv" style="margin-top:4px"></div>';
+ h+='</div>';
+ h+='<div style="margin-top:10px"><label style="font-size:11px;color:var(--text2);font-weight:600">Target Directory</label>';
+ h+='<input id="venvDir" class="input" placeholder="C:\\Users\\you\\project" style="margin-top:4px"></div>';
+ h+='<button class="btn primary" style="margin-top:12px" onclick="createVenv()">Create Venv</button>';
+ h+='</div>';
+ // Export / Import
+ h+='<div class="tbl" style="padding:20px;margin-bottom:16px">';
+ h+='<div style="font-size:14px;font-weight:700;margin-bottom:12px">Export / Import Environment</div>';
+ h+='<div style="font-size:12px;color:var(--text2);margin-bottom:12px">Export your Python setup to JSON. Import on a new machine to see what needs installing.</div>';
+ h+='<div style="display:flex;gap:8px">';
+ h+='<button class="btn" onclick="exportEnv()">Export Environment</button>';
+ h+='<button class="btn" onclick="importEnv()">Import Environment</button>';
+ h+='</div>';
+ h+='<pre id="exportResult" style="display:none;margin-top:12px;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);font-size:11px;max-height:300px;overflow:auto;white-space:pre-wrap;font-family:monospace"></pre>';
+ h+='</div>';
+ // Update Check
+ h+='<div class="tbl" style="padding:20px">';
+ h+='<div style="font-size:14px;font-weight:700;margin-bottom:12px">Check for Updates</div>';
+ h+='<div id="updateResult" style="font-size:12px;color:var(--text2)">Click to check for new versions.</div>';
+ h+='<button class="btn" style="margin-top:10px" onclick="checkUpdate()">Check Now</button>';
+ h+='</div>';
+ el.innerHTML=h;
+}
+async function createVenv(){
+ var py=document.getElementById('venvPy').value;
+ var dir=document.getElementById('venvDir').value;
+ var name=document.getElementById('venvName').value;
+ if(!py){st('Select a Python version');return;}
+ if(!dir){st('Enter target directory');return;}
+ st('Creating venv...');
+ try{var r=await api().CreateVenv(py,dir,name);
+  if(r.success){st('Created: '+r.path);renderTools();}
+  else{st('Failed: '+r.message);}
+ }catch(e){st('Error: '+e);}
+}
+async function exportEnv(){
+ st('Exporting environment...');
+ try{var json=await api().ExportEnvironment();
+  var pre=document.getElementById('exportResult');
+  pre.style.display='block';pre.textContent=json;
+  st('Exported. Copy the JSON above.');
+ }catch(e){st('Error: '+e);}
+}
+async function importEnv(){
+ var json=prompt('Paste exported JSON:');
+ if(!json)return;
+ try{var r=await api().ImportEnvironment(json);
+  alert(r);st('Import complete');
+ }catch(e){st('Error: '+e);}
+}
+async function checkUpdate(){
+ st('Checking for updates...');
+ try{var u=await api().CheckForUpdate();
+  var el=document.getElementById('updateResult');
+  if(u.hasUpdate){
+   el.innerHTML='<div class="alert alert-warn">New version <b>v'+esc(u.latestVersion)+'</b> available! Current: v'+esc(u.currentVersion)+
+    ' <a href="'+esc(u.updateUrl)+'" target="_blank" style="color:var(--blue);font-weight:600">Download</a></div>';
+   st('Update available: v'+u.latestVersion);
+  }else{
+   el.innerHTML='<div class="alert alert-ok">You are on the latest version (v'+esc(u.currentVersion)+').</div>';
+   st('Up to date');
+  }
+ }catch(e){st('Error checking: '+e);}
+}
 
 function closeSP(){selExe=null;document.getElementById('sp').classList.remove('open');if(S)renderInst();}
 function ck(v){return v?'<span class="hok">&#10003;</span>':'<span class="hbad">&#10007;</span>';}

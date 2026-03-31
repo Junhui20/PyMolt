@@ -1,8 +1,12 @@
 package internal
 
 import (
+	"encoding/json"
+	"runtime"
 	"strconv"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/Junhui20/PyMolt/internal/analyzer"
 	"github.com/Junhui20/PyMolt/internal/detector"
@@ -310,4 +314,77 @@ func (a *App) ExecuteFix(fixAction string) string {
 	default:
 		return "Use the specific action buttons for this fix"
 	}
+}
+
+// --- Update Check ---
+
+func (a *App) CheckForUpdate() *analyzer.UpdateInfo {
+	return analyzer.CheckForUpdate()
+}
+
+// --- Export / Import ---
+
+type ExportData struct {
+	Installations []ExportInstallation `json:"installations"`
+	ExportedAt    string               `json:"exportedAt"`
+	Platform      string               `json:"platform"`
+}
+
+type ExportInstallation struct {
+	Version    string   `json:"version"`
+	Source     string   `json:"source"`
+	Path       string   `json:"path"`
+	IsDefault  bool     `json:"isDefault"`
+	Packages   []string `json:"packages"`
+}
+
+func (a *App) ExportEnvironment() string {
+	a.mu.RLock()
+	scan := a.lastScan
+	a.mu.RUnlock()
+	if scan == nil {
+		return `{"error":"Scan first"}`
+	}
+
+	var installs []ExportInstallation
+	for _, inst := range scan.Installations {
+		pkgs, _ := analyzer.ListPackages(inst.Executable)
+		var pkgNames []string
+		for _, p := range pkgs {
+			pkgNames = append(pkgNames, p.Name+"=="+p.Version)
+		}
+		installs = append(installs, ExportInstallation{
+			Version:   inst.Version,
+			Source:    string(inst.Source),
+			Path:     inst.Path,
+			IsDefault: inst.IsDefault,
+			Packages: pkgNames,
+		})
+	}
+
+	data := ExportData{
+		Installations: installs,
+		ExportedAt:    time.Now().Format(time.RFC3339),
+		Platform:      runtime.GOOS,
+	}
+
+	out, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return `{"error":"` + err.Error() + `"}`
+	}
+	return string(out)
+}
+
+func (a *App) ImportEnvironment(jsonData string) string {
+	var data ExportData
+	if err := json.Unmarshal([]byte(jsonData), &data); err != nil {
+		return "Invalid JSON: " + err.Error()
+	}
+
+	var summary []string
+	for _, inst := range data.Installations {
+		summary = append(summary, inst.Source+" Python "+inst.Version+" ("+strconv.Itoa(len(inst.Packages))+" packages)")
+	}
+
+	return "Found " + strconv.Itoa(len(data.Installations)) + " installations:\n" + strings.Join(summary, "\n")
 }
