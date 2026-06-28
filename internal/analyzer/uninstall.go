@@ -34,6 +34,8 @@ func Uninstall(inst models.PythonInstallation) *UninstallResult {
 		return uninstallScoop(inst)
 	case models.SourceHomebrew:
 		return uninstallHomebrew(inst)
+	case models.SourcePyManager:
+		return uninstallPyManager(inst)
 	default:
 		return deleteDirectory(inst)
 	}
@@ -150,5 +152,5 @@ func looksLikePythonDir(path string) bool {
 }
 
 // uninstallUV, uninstallOfficial, uninstallChocolatey, uninstallScoop, uninstallHomebrew,
-// platformProtectedPaths, and the cache functions
+// uninstallPyManager, platformProtectedPaths, and the cache functions
 // are defined in uninstall_windows.go / uninstall_unix.go

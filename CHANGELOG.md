@@ -17,7 +17,7 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   that point at a Python you don't have installed.
 - Windows: a vendor-agnostic PEP 514 registry read (all `Company\Tag` entries, not
   just `PythonCore`) and detection of Microsoft **PyManager** runtimes under
-  `%LocalAppData%\Python` as a new source.
+  `%LocalAppData%\Python` as a new source; uninstall is routed through `py uninstall`.
 - A "no-GIL" badge marking free-threaded (PEP 703) interpreters.
 - `docs/SIGNING.md`: how to enable macOS/Windows code signing + notarization.
 - The project's first unit tests: the delete guard, version comparison, argument

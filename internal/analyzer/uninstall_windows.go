@@ -138,6 +138,25 @@ func uninstallHomebrew(_ models.PythonInstallation) *UninstallResult {
 	return &UninstallResult{Success: false, Message: "Homebrew is not available on Windows"}
 }
 
+func uninstallPyManager(inst models.PythonInstallation) *UninstallResult {
+	ver := inst.MajorMinor
+	if ver == "" {
+		ver = inst.Version
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	// Microsoft PyManager: remove the runtime via its own CLI so its registry
+	// entries and shims stay consistent. The exact tag syntax should be confirmed
+	// on a real Windows machine; on any failure we fall back to deleting the dir.
+	cmd := exec.CommandContext(ctx, "py", "uninstall", "--yes", ver)
+	hideWindow(cmd)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return deleteDirectory(inst)
+	}
+	return &UninstallResult{Success: true, Message: strings.TrimSpace(string(out)), SpaceFreed: inst.SizeBytes}
+}
+
 // GetPipCacheSize returns the size of pip cache in bytes.
 func GetPipCacheSize() (int64, string) {
 	home := os.Getenv("LOCALAPPDATA")

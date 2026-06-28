@@ -102,8 +102,9 @@ not just `PythonCore` (`pep514_windows.go`). A new `PyManagerDetector`
 (`pymanager_windows.go` + `pymanager_stub.go`) claims `%LocalAppData%\Python`
 runtimes as a new `PyManager` source. Cross-compiles for Windows; **the registry /
 on-disk layout still needs a real Windows machine to confirm.** Still to do: driving
-`py install`/`uninstall`/`list --online`, `%LocalAppData%\Python\bin` shim
-management, and stale-registration repair.
+`%LocalAppData%\Python\bin` shim management and stale-registration repair.
+(`py uninstall` routing for PyManager installs is now wired; `py install`/`list`
+were intentionally skipped — they'd duplicate the existing uv version management.)
 
 **Plan**
 - New `internal/detector/pymanager_windows.go`: read the **full PEP 514 registry**

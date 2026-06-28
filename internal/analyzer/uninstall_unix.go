@@ -53,6 +53,10 @@ func uninstallScoop(_ models.PythonInstallation) *UninstallResult {
 	return &UninstallResult{Success: false, Message: "Scoop is not available on this platform"}
 }
 
+func uninstallPyManager(_ models.PythonInstallation) *UninstallResult {
+	return &UninstallResult{Success: false, Message: "PyManager is not available on this platform"}
+}
+
 func uninstallHomebrew(inst models.PythonInstallation) *UninstallResult {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
