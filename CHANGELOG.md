@@ -7,6 +7,13 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Fixed
+- **"Delete venv" and "Remove duplicates" auto-fix buttons did nothing.**
+  `ExecuteFix` only implemented `repair_path` and `clean_cache`; every other action
+  fell through to a no-op that returned "Use the specific action buttons for this
+  fix". The orphaned-venv delete and duplicate-removal actions are now implemented
+  (the venv path is carried in the action), they go through the guarded delete
+  path (never the OS interpreter), and the summary cards + fix list refresh in
+  place afterward.
 - **One system Python counted as several "duplicates."** Deduplication keyed on
   the literal executable path, so the same interpreter reached through symlinks —
   `/bin` → `/usr/bin` and `python3` → `python3.X`, common on every modern Linux —

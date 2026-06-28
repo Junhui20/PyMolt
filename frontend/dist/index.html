@@ -1052,12 +1052,15 @@
     // on every scan when the user may never look at health.
     async function loadBG() { H = null; try { P = await api().GetPATHAnalysis(); } catch (e) { } }
 
-    function renderAll() {
-      var i = S.installations || [], vc = 0, ts = S.totalSize || 0;
+    function renderStats() {
+      var i = S.installations || [], vc = 0;
       i.forEach(function (x) { if (x.Source === 'Virtual Environment') vc++; });
       var rc = i.length - vc, dp = (S.duplicates || []).length, or = (S.orphanedVenvs || []).length;
       document.getElementById('stats').innerHTML =
-        stat('Installations', rc, 'blue') + stat('Virtual Envs', vc, 'teal') + stat('Duplicates', dp, dp > 0 ? 'red' : 'green') + stat('Orphaned', or, or > 0 ? 'orange' : 'green') + stat('Total Size', fmtSize(ts), 'orange');
+        stat('Installations', rc, 'blue') + stat('Virtual Envs', vc, 'teal') + stat('Duplicates', dp, dp > 0 ? 'red' : 'green') + stat('Orphaned', or, or > 0 ? 'orange' : 'green') + stat('Total Size', fmtSize(S.totalSize || 0), 'orange');
+    }
+    function renderAll() {
+      renderStats();
       document.getElementById('tabBar').innerHTML =
         '<button class="tab active" onclick="sw(\'Install\',this)">Installations</button>' +
         '<button class="tab" onclick="sw(\'Path\',this)">PATH</button>' +
@@ -1237,7 +1240,13 @@
 
     async function execFix(action) {
       st('Fixing...');
-      try { var r = await api().ExecuteFix(action); st(r); renderFix(); } catch (e) { st('Error: ' + e); }
+      try {
+        var r = await api().ExecuteFix(action);
+        st(r);
+        S = await api().Scan();   // backend already rescanned; refresh frontend state
+        renderStats();            // update the summary cards in place
+        renderFix();              // re-render the fix list (stay on this tab)
+      } catch (e) { st('Error: ' + e); }
     }
 
     // --- Marketplace ---

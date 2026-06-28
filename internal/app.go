@@ -321,16 +321,89 @@ func (a *App) GetFixReport() *analyzer.FixReport {
 }
 
 func (a *App) ExecuteFix(fixAction string) string {
-	switch fixAction {
-	case "repair_path":
+	switch {
+	case fixAction == "repair_path":
 		return a.RepairPATH()
-	case "clean_cache":
+	case fixAction == "clean_cache":
 		r1 := analyzer.CleanPipCache()
 		r2 := analyzer.CleanUVCache()
 		return r1.Message + "; " + r2.Message
+	case strings.HasPrefix(fixAction, "delete_venv:"):
+		return a.executeDeleteVenv(strings.TrimPrefix(fixAction, "delete_venv:"))
+	case fixAction == "remove_duplicates":
+		return a.executeRemoveDuplicates()
 	default:
 		return "Use the specific action buttons for this fix"
 	}
+}
+
+// executeDeleteVenv removes a single orphaned virtual environment by its path via
+// the guarded Uninstall path (which refuses protected locations and anything that
+// isn't actually a venv/interpreter), then refreshes the cached scan so the fix
+// report reflects the removal.
+func (a *App) executeDeleteVenv(path string) string {
+	if path == "" {
+		return "No virtual environment specified"
+	}
+	a.mu.RLock()
+	scan := a.lastScan
+	a.mu.RUnlock()
+	inst := models.PythonInstallation{Source: models.SourceVenv, Path: path}
+	if scan != nil {
+		for _, i := range scan.Installations {
+			if i.Source == models.SourceVenv && i.Path == path {
+				inst = i // carry SizeBytes/Executable from the scan
+				break
+			}
+		}
+	}
+	res := analyzer.Uninstall(inst)
+	if res.Success {
+		a.Scan() // refresh the cached scan so the report/counts update
+	}
+	return res.Message
+}
+
+// executeRemoveDuplicates removes the non-preferred members of each duplicate
+// group from the most recent scan. The OS-managed (System) interpreter is never
+// auto-removed.
+func (a *App) executeRemoveDuplicates() string {
+	a.mu.RLock()
+	scan := a.lastScan
+	a.mu.RUnlock()
+	if scan == nil {
+		return "Run a scan first"
+	}
+	dupes := analyzer.FindDuplicates(scan.Installations)
+	if len(dupes) == 0 {
+		return "No duplicates to remove"
+	}
+	var removed, failed int
+	var freed int64
+	for _, d := range dupes {
+		for _, inst := range d.Installations {
+			if d.RecommendKeep != nil && inst.Executable == d.RecommendKeep.Executable {
+				continue
+			}
+			if inst.Source == models.SourceSystem {
+				continue // never auto-remove the OS interpreter
+			}
+			if res := analyzer.Uninstall(inst); res.Success {
+				removed++
+				freed += res.SpaceFreed
+			} else {
+				failed++
+			}
+		}
+	}
+	if removed > 0 {
+		a.Scan()
+	}
+	msg := "Removed " + strconv.Itoa(removed) + " duplicate(s), freed " + models.FormatSize(freed)
+	if failed > 0 {
+		msg += "; " + strconv.Itoa(failed) + " could not be removed"
+	}
+	return msg
 }
 
 // --- Update Check ---

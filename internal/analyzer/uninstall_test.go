@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	"github.com/Junhui20/PyMolt/internal/models"
 )
 
 func TestUnsafeToDelete_RejectsEmptyAndRelative(t *testing.T) {
@@ -88,6 +90,27 @@ func TestLooksLikePythonDir(t *testing.T) {
 	writeFile(t, exe, "")
 	if !looksLikePythonDir(install) {
 		t.Error("a directory containing a python interpreter should look like a Python dir")
+	}
+}
+
+// TestUninstall_DeletesWindowsStyleOrphanedVenv covers a real case: a venv created
+// on Windows (Scripts/ layout, base interpreter under a C:\... path) synced onto a
+// Linux machine, where it is orphaned and has no usable interpreter. The "Delete
+// venv" auto-fix must still remove it — looksLikePythonDir accepts pyvenv.cfg next
+// to a Scripts/ directory regardless of host OS.
+func TestUninstall_DeletesWindowsStyleOrphanedVenv(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "project", ".venv311")
+	mkdir(t, filepath.Join(dir, "Scripts"))
+	mkdir(t, filepath.Join(dir, "Lib"))
+	writeFile(t, filepath.Join(dir, "pyvenv.cfg"),
+		"home = C:\\Users\\Someone\\AppData\\Roaming\\uv\\python\\cpython-3.11.14-windows-x86_64-none\n")
+
+	res := Uninstall(models.PythonInstallation{Source: models.SourceVenv, Path: dir, SizeBytes: 1234})
+	if !res.Success {
+		t.Fatalf("expected delete to succeed, got failure: %s", res.Message)
+	}
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Errorf("expected %s to be removed, stat err = %v", dir, err)
 	}
 }
 

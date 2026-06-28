@@ -67,7 +67,7 @@ func GenerateFixReport(installs []models.PythonInstallation) *FixReport {
 			Severity:    "warning",
 			Title:       "Orphaned venv: " + o.Path,
 			Description: "This virtual environment's base Python no longer exists. It cannot be used.",
-			FixAction:   "delete_venv",
+			FixAction:   "delete_venv:" + o.Path,
 			FixLabel:    "Delete venv",
 			SpaceSaved:  o.SizeBytes,
 			AutoFixable: true,
