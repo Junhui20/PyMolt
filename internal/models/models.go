@@ -55,6 +55,7 @@ type PythonInstallation struct {
 	IsOrphaned        bool         // venv whose base Python no longer exists
 	EOL               EOLStatus    // upstream support status for this major.minor
 	ExternallyManaged bool         // pip install blocked by PEP 668 (externally managed)
+	FreeThreaded      bool         // free-threaded (no-GIL, PEP 703) build
 }
 
 // DisplaySize returns a human-readable size string.

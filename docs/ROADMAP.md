@@ -160,10 +160,17 @@ installs, and a "Project Python Pins" section in the Tools tab lists them with a
 - Windows Store app-execution-alias diagnose + one-click disable (the stub is already
   detected in `store_windows.go` — just add the explainer + fix).
 - pip repair from the health check (`ensurepip` / `apt install python3-pip` / `get-pip`).
-- Free-threaded (no-GIL) `3.13t`/`3.14t` badge.
+- ✅ Free-threaded (no-GIL) badge — done (detected via `sys._is_gil_enabled` folded
+  into the existing version probe; shows a "no-GIL" chip).
 - Unified pipx + `uv tool` global-CLI manager.
 - Guided "fully remove Anaconda" (strip `conda init` blocks, `auto_activate_base false`).
 - Environment clone; Jupyter kernelspec mapping; lockfile (`pylock.toml`) viewer.
+
+## 🔐 Distribution / signing
+Release binaries are unsigned (Gatekeeper/SmartScreen warn on first run). Removing
+that requires certificates only the owner can obtain — see **[docs/SIGNING.md](SIGNING.md)**
+for the exact secrets and CI steps. Follow-up: package macOS as a `.app`/`.dmg` so
+the notarization ticket can be stapled (bare binaries can't be).
 
 ## ⛔ Out of scope (stay a *front-end* to uv, don't reimplement it)
 - Full project/dependency resolution & locking (poetry/pdm/uv-project territory).

@@ -1073,7 +1073,7 @@
       var h = '<div class="tbl"><table style="table-layout:fixed"><colgroup><col style="width:140px"><col style="width:150px"><col style="width:60px"><col><col style="width:90px"></colgroup><thead><tr><th>Source</th><th>Version</th><th>Arch</th><th>Path</th><th style="text-align:right">Size</th></tr></thead><tbody>';
       inst.forEach(function (i, idx) {
         var c = selExe === i.Executable ? ' class="sel"' : ''; var ot = (i.IsOrphaned || oset[i.Executable]) ? '<span class="otag">ORPHANED</span>' : '';
-        h += '<tr' + c + ' onclick="selIdx(' + idx + ')"><td><span class="badge ' + bc(i.Source) + '">' + esc(i.Source) + '</span></td><td><span style="font-weight:600">' + esc(i.Version) + '</span>' + eolBadge(i.EOL) + pep668Badge(i.ExternallyManaged) + (i.IsDefault ? ' <span style="color:var(--orange)">DEFAULT</span>' : '') + ot + '</td><td style="color:var(--text3)">' + esc(i.Architecture || '-') + '</td><td class="path-cell" title="' + esc(i.Path) + '"><span class="mono">' + esc(i.Path) + '</span></td><td style="text-align:right;font-weight:600">' + fmtSize(i.SizeBytes) + '</td></tr>';
+        h += '<tr' + c + ' onclick="selIdx(' + idx + ')"><td><span class="badge ' + bc(i.Source) + '">' + esc(i.Source) + '</span></td><td><span style="font-weight:600">' + esc(i.Version) + '</span>' + eolBadge(i.EOL) + pep668Badge(i.ExternallyManaged) + ftBadge(i.FreeThreaded) + (i.IsDefault ? ' <span style="color:var(--orange)">DEFAULT</span>' : '') + ot + '</td><td style="color:var(--text3)">' + esc(i.Architecture || '-') + '</td><td class="path-cell" title="' + esc(i.Path) + '"><span class="mono">' + esc(i.Path) + '</span></td><td style="text-align:right;font-weight:600">' + fmtSize(i.SizeBytes) + '</td></tr>';
       });
       h += '</tbody></table></div>'; document.getElementById('tInstall').innerHTML = h;
     }
@@ -1548,6 +1548,11 @@
     function pep668Badge(b) {
       if (!b) return '';
       return ' <span title="pip install is blocked for this Python (PEP 668, externally managed). Create a virtual environment to install packages." style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;color:#fff;vertical-align:middle;background:#7c3aed">PEP 668</span>';
+    }
+    // ftBadge flags free-threaded (no-GIL, PEP 703) builds.
+    function ftBadge(b) {
+      if (!b) return '';
+      return ' <span title="Free-threaded build (no GIL, PEP 703)" style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;color:#fff;vertical-align:middle;background:#0891b2">no-GIL</span>';
     }
     function st(m) { document.getElementById('status').textContent = m; }
     function show(id) { document.getElementById(id).style.display = 'block'; }

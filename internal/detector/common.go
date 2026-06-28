@@ -97,7 +97,7 @@ func MakeInstallation(dir string, source models.PythonSource) *models.PythonInst
 	if exe == "" {
 		return nil
 	}
-	version, arch := getVersionAndArch(exe)
+	version, arch, freeThreaded := getVersionAndArch(exe)
 	if version == "" {
 		return nil
 	}
@@ -110,28 +110,32 @@ func MakeInstallation(dir string, source models.PythonSource) *models.PythonInst
 		SizeBytes:    DirSize(dir),
 		InPath:       IsInPath(dir),
 		Architecture: arch,
+		FreeThreaded: freeThreaded,
 	}
 }
 
 // getVersionAndArch returns the version (e.g. "3.13.9") and architecture
 // ("64-bit"/"32-bit") of a Python executable in a single subprocess instead of
 // spawning one process for each. Returns ("", "") if the executable cannot run.
-func getVersionAndArch(executable string) (string, string) {
+func getVersionAndArch(executable string) (version, arch string, freeThreaded bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	// One subprocess: version, pointer size (architecture), and whether this is a
+	// free-threaded (no-GIL, PEP 703) build. sys._is_gil_enabled exists on 3.13+;
+	// on older interpreters the getattr fallback reports the GIL as enabled.
 	cmd := exec.CommandContext(ctx, executable, "-c",
-		"import struct,sys;print(sys.version.split()[0]);print(struct.calcsize('P')*8)")
+		"import struct,sys;print(sys.version.split()[0]);print(struct.calcsize('P')*8);print(int(not getattr(sys,'_is_gil_enabled',lambda:True)()))")
 	hideWindow(cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", ""
+		return "", "", false
 	}
 	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
 	if len(lines) < 2 {
-		return "", ""
+		return "", "", false
 	}
-	version := strings.TrimSpace(lines[0])
-	arch := strings.TrimSpace(lines[1])
+	version = strings.TrimSpace(lines[0])
+	arch = strings.TrimSpace(lines[1])
 	switch arch {
 	case "64":
 		arch = "64-bit"
@@ -140,7 +144,10 @@ func getVersionAndArch(executable string) (string, string) {
 	default:
 		arch = arch + "-bit"
 	}
-	return version, arch
+	if len(lines) >= 3 && strings.TrimSpace(lines[2]) == "1" {
+		freeThreaded = true
+	}
+	return version, arch, freeThreaded
 }
 
 // HomeDir returns the user's home directory cross-platform.
