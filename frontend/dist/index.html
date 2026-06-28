@@ -1239,6 +1239,11 @@
     }
 
     async function execFix(action) {
+      if (action.indexOf('delete_venv') === 0) {
+        if (!confirm('Permanently delete this virtual environment? This cannot be undone.')) return;
+      } else if (action === 'remove_duplicates') {
+        if (!confirm('Remove the duplicate Python installations? This cannot be undone.')) return;
+      }
       st('Fixing...');
       try {
         var r = await api().ExecuteFix(action);

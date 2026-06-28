@@ -13,7 +13,8 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   fix". The orphaned-venv delete and duplicate-removal actions are now implemented
   (the venv path is carried in the action), they go through the guarded delete
   path (never the OS interpreter), and the summary cards + fix list refresh in
-  place afterward.
+  place afterward. The destructive auto-fixes now ask for confirmation first, like
+  the side-panel uninstall.
 - **One system Python counted as several "duplicates."** Deduplication keyed on
   the literal executable path, so the same interpreter reached through symlinks —
   `/bin` → `/usr/bin` and `python3` → `python3.X`, common on every modern Linux —
