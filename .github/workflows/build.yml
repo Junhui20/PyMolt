@@ -6,8 +6,40 @@ on:
       - 'v*'
   workflow_dispatch:
 
+# Least privilege by default; only the release job elevates to write.
+permissions:
+  contents: read
+
 jobs:
+  check:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+
+      - name: Check formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt-clean. Run 'gofmt -w .':"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet -mod=readonly ./...
+
   build-windows:
+    needs: check
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
@@ -23,10 +55,11 @@ jobs:
 
       - name: Build
         run: |
-          go mod tidy
+          $VERSION = $env:GITHUB_REF_NAME -replace '^v',''
+          if ($env:GITHUB_REF_TYPE -ne 'tag') { $VERSION = '0.0.0-dev' }
           $env:CGO_ENABLED=1
           $env:CC="gcc"
-          go build -tags desktop,production -ldflags "-H windowsgui -s -w" -o pymolt.exe .
+          go build -mod=readonly -tags desktop,production -ldflags "-H windowsgui -s -w -X github.com/Junhui20/PyMolt/internal/analyzer.AppVersion=$VERSION" -o pymolt.exe .
         shell: pwsh
 
       - name: Upload artifact
@@ -36,6 +69,7 @@ jobs:
           path: pymolt.exe
 
   build-macos:
+    needs: check
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v5
@@ -47,8 +81,9 @@ jobs:
 
       - name: Build
         run: |
-          go mod tidy
-          CGO_ENABLED=1 CGO_LDFLAGS="-framework UniformTypeIdentifiers" go build -tags desktop,production -ldflags "-s -w" -o pymolt .
+          VERSION="${GITHUB_REF_NAME#v}"
+          [ "${GITHUB_REF_TYPE}" = "tag" ] || VERSION="0.0.0-dev"
+          CGO_ENABLED=1 CGO_LDFLAGS="-framework UniformTypeIdentifiers" go build -mod=readonly -tags desktop,production -ldflags "-s -w -X github.com/Junhui20/PyMolt/internal/analyzer.AppVersion=${VERSION}" -o pymolt .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
@@ -57,6 +92,7 @@ jobs:
           path: pymolt
 
   build-linux:
+    needs: check
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v5
@@ -73,8 +109,9 @@ jobs:
 
       - name: Build
         run: |
-          go mod tidy
-          CGO_ENABLED=1 go build -tags desktop,production -ldflags "-s -w" -o pymolt .
+          VERSION="${GITHUB_REF_NAME#v}"
+          [ "${GITHUB_REF_TYPE}" = "tag" ] || VERSION="0.0.0-dev"
+          CGO_ENABLED=1 go build -mod=readonly -tags desktop,production -ldflags "-s -w -X github.com/Junhui20/PyMolt/internal/analyzer.AppVersion=${VERSION}" -o pymolt .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
@@ -94,13 +131,16 @@ jobs:
         with:
           path: artifacts
 
-      - name: Prepare release files
+      - name: Prepare release files and checksums
         run: |
           ls -R artifacts/
           cp artifacts/pymolt-windows/pymolt.exe pymolt-windows.exe
           cp artifacts/pymolt-macos/pymolt pymolt-macos
           cp artifacts/pymolt-linux/pymolt pymolt-linux
           chmod +x pymolt-macos pymolt-linux
+          sha256sum pymolt-windows.exe pymolt-macos pymolt-linux > SHA256SUMS.txt
+          echo "Published checksums:"
+          cat SHA256SUMS.txt
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -109,4 +149,5 @@ jobs:
             pymolt-windows.exe
             pymolt-macos
             pymolt-linux
+            SHA256SUMS.txt
           generate_release_notes: true

@@ -43,15 +43,19 @@ func ExtractMajorMinor(version string) string {
 	return version
 }
 
-// DirSize calculates total size of a directory in bytes.
+// DirSize calculates total size of a directory in bytes. It uses WalkDir, which
+// reads directory entries without an lstat per file and fetches size only for
+// regular files — roughly half the syscalls of filepath.Walk on large trees.
 func DirSize(path string) int64 {
 	var size int64
-	_ = filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+	_ = filepath.WalkDir(path, func(_ string, d os.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
-		if !info.IsDir() {
-			size += info.Size()
+		if !d.IsDir() {
+			if info, err := d.Info(); err == nil {
+				size += info.Size()
+			}
 		}
 		return nil
 	})
@@ -93,7 +97,7 @@ func MakeInstallation(dir string, source models.PythonSource) *models.PythonInst
 	if exe == "" {
 		return nil
 	}
-	version := GetPythonVersion(exe)
+	version, arch := getVersionAndArch(exe)
 	if version == "" {
 		return nil
 	}
@@ -105,8 +109,38 @@ func MakeInstallation(dir string, source models.PythonSource) *models.PythonInst
 		Source:       source,
 		SizeBytes:    DirSize(dir),
 		InPath:       IsInPath(dir),
-		Architecture: GetArchitecture(exe),
+		Architecture: arch,
 	}
+}
+
+// getVersionAndArch returns the version (e.g. "3.13.9") and architecture
+// ("64-bit"/"32-bit") of a Python executable in a single subprocess instead of
+// spawning one process for each. Returns ("", "") if the executable cannot run.
+func getVersionAndArch(executable string) (string, string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, executable, "-c",
+		"import struct,sys;print(sys.version.split()[0]);print(struct.calcsize('P')*8)")
+	hideWindow(cmd)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", ""
+	}
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	if len(lines) < 2 {
+		return "", ""
+	}
+	version := strings.TrimSpace(lines[0])
+	arch := strings.TrimSpace(lines[1])
+	switch arch {
+	case "64":
+		arch = "64-bit"
+	case "":
+		arch = "unknown"
+	default:
+		arch = arch + "-bit"
+	}
+	return version, arch
 }
 
 // HomeDir returns the user's home directory cross-platform.

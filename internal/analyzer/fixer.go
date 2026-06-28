@@ -1,17 +1,24 @@
 package analyzer
 
 import (
+	"strconv"
+
 	"github.com/Junhui20/PyMolt/internal/models"
 )
+
+// CacheCleanThresholdBytes is the combined pip+uv cache size above which PyMolt
+// suggests cleaning. Shared by the GUI fix report and the `pymolt fix` CLI so the
+// two never disagree on what counts as "too big".
+const CacheCleanThresholdBytes int64 = 100 * 1024 * 1024
 
 // FixIssue represents a detected problem with a suggested fix.
 type FixIssue struct {
 	ID          string `json:"id"`
-	Severity    string `json:"severity"`    // "critical", "warning", "info"
+	Severity    string `json:"severity"` // "critical", "warning", "info"
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	FixAction   string `json:"fixAction"`   // what the fix button does
-	FixLabel    string `json:"fixLabel"`     // button text
+	FixLabel    string `json:"fixLabel"`    // button text
 	SpaceSaved  int64  `json:"spaceSaved"`  // bytes reclaimable, 0 if N/A
 	AutoFixable bool   `json:"autoFixable"` // can be fixed with one click
 }
@@ -43,7 +50,7 @@ func GenerateFixReport(installs []models.PythonInstallation) *FixReport {
 			ID:          "dup-" + d.Version,
 			Severity:    "warning",
 			Title:       "Duplicate Python " + d.Version,
-			Description: "Python " + d.Version + " is installed from " + itoa(len(d.Installations)) + " different sources. Keep one, remove the rest.",
+			Description: "Python " + d.Version + " is installed from " + strconv.Itoa(len(d.Installations)) + " different sources. Keep one, remove the rest.",
 			FixAction:   "remove_duplicates",
 			FixLabel:    "Remove duplicates",
 			SpaceSaved:  removable,
@@ -74,7 +81,7 @@ func GenerateFixReport(installs []models.PythonInstallation) *FixReport {
 		report.Issues = append(report.Issues, FixIssue{
 			ID:          "path-orphaned",
 			Severity:    "critical",
-			Title:       itoa(pathAnalysis.OrphanedCount) + " orphaned PATH entries",
+			Title:       strconv.Itoa(pathAnalysis.OrphanedCount) + " orphaned PATH entries",
 			Description: "PATH contains entries pointing to directories that no longer exist. This can cause 'python not found' errors.",
 			FixAction:   "repair_path",
 			FixLabel:    "Repair PATH",
@@ -86,12 +93,12 @@ func GenerateFixReport(installs []models.PythonInstallation) *FixReport {
 		for _, c := range pathAnalysis.Conflicts {
 			if c != "" {
 				report.Issues = append(report.Issues, FixIssue{
-					ID:       "path-conflict",
-					Severity: "warning",
-					Title:    "PATH conflict",
+					ID:          "path-conflict",
+					Severity:    "warning",
+					Title:       "PATH conflict",
 					Description: c,
-					FixAction: "repair_path",
-					FixLabel:  "Repair PATH",
+					FixAction:   "repair_path",
+					FixLabel:    "Repair PATH",
 					AutoFixable: true,
 				})
 			}
@@ -130,7 +137,7 @@ func GenerateFixReport(installs []models.PythonInstallation) *FixReport {
 	pipSize, _ := GetPipCacheSize()
 	uvSize, _ := GetUVCacheSize()
 	totalCache := pipSize + uvSize
-	if totalCache > 50*1024*1024 { // >50MB
+	if totalCache > CacheCleanThresholdBytes {
 		report.Issues = append(report.Issues, FixIssue{
 			ID:          "cache",
 			Severity:    "info",
@@ -165,11 +172,4 @@ func GenerateFixReport(installs []models.PythonInstallation) *FixReport {
 	report.ScorePercent = score
 
 	return report
-}
-
-func itoa(n int) string {
-	if n < 10 {
-		return string(rune('0' + n))
-	}
-	return itoa(n/10) + string(rune('0'+n%10))
 }

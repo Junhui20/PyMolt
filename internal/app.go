@@ -25,7 +25,7 @@ func NewApp() *App { return &App{} }
 // --- Scan ---
 
 type ScanResult struct {
-	Installations   []models.PythonInstallation   `json:"installations"`
+	Installations   []models.PythonInstallation    `json:"installations"`
 	Duplicates      []models.DuplicateGroup        `json:"duplicates"`
 	Recommendations []models.CleanupRecommendation `json:"recommendations"`
 	OrphanedVenvs   []models.PythonInstallation    `json:"orphanedVenvs"`
@@ -37,6 +37,10 @@ type ScanResult struct {
 func (a *App) Scan() *ScanResult {
 	scanner := detector.NewScanner()
 	raw := scanner.Scan()
+	for i := range raw.Installations {
+		raw.Installations[i].EOL = analyzer.PythonEOL(raw.Installations[i].MajorMinor)
+		raw.Installations[i].ExternallyManaged = analyzer.IsExternallyManaged(raw.Installations[i])
+	}
 	dupes := analyzer.FindDuplicates(raw.Installations)
 	recs := analyzer.GenerateRecommendations(raw.Installations, dupes)
 	orphans := analyzer.FindOrphanedVenvs(raw.Installations)
@@ -76,6 +80,25 @@ func (a *App) findInstallation(executable string) (models.PythonInstallation, bo
 	return models.PythonInstallation{}, false
 }
 
+// requireInstallation looks up a scanned installation by executable path. It
+// returns the installation and an empty message on success, or a zero value and
+// a user-facing message ("Scan first" if no scan has run yet, otherwise
+// "Installation not found"). It centralizes the guard shared by the bound
+// methods below.
+func (a *App) requireInstallation(executable string) (models.PythonInstallation, string) {
+	inst, ok := a.findInstallation(executable)
+	if ok {
+		return inst, ""
+	}
+	a.mu.RLock()
+	scanned := a.lastScan != nil
+	a.mu.RUnlock()
+	if !scanned {
+		return inst, "Scan first"
+	}
+	return inst, "Installation not found"
+}
+
 // --- PATH ---
 
 func (a *App) GetPATHAnalysis() *analyzer.PathAnalysis { return analyzer.AnalyzePATH() }
@@ -96,12 +119,9 @@ func (a *App) RepairPATH() string {
 }
 
 func (a *App) SetDefaultPython(executable string) string {
-	inst, ok := a.findInstallation(executable)
-	if !ok {
-		if a.lastScan == nil {
-			return "Scan first"
-		}
-		return "Installation not found"
+	inst, errMsg := a.requireInstallation(executable)
+	if errMsg != "" {
+		return errMsg
 	}
 	if err := analyzer.SetDefaultPython(inst.Path); err != nil {
 		return "Error: " + err.Error()
@@ -146,11 +166,8 @@ func (a *App) GetOutdatedPackages(executable string) []analyzer.OutdatedPackage 
 }
 
 func (a *App) InstallPackage(executable, packageName string) string {
-	if _, ok := a.findInstallation(executable); !ok {
-		if a.lastScan == nil {
-			return "Scan first"
-		}
-		return "Installation not found"
+	if _, errMsg := a.requireInstallation(executable); errMsg != "" {
+		return errMsg
 	}
 	msg, err := analyzer.InstallPackage(executable, packageName)
 	if err != nil {
@@ -160,11 +177,8 @@ func (a *App) InstallPackage(executable, packageName string) string {
 }
 
 func (a *App) UninstallPackage(executable, packageName string) string {
-	if _, ok := a.findInstallation(executable); !ok {
-		if a.lastScan == nil {
-			return "Scan first"
-		}
-		return "Installation not found"
+	if _, errMsg := a.requireInstallation(executable); errMsg != "" {
+		return errMsg
 	}
 	msg, err := analyzer.UninstallPackage(executable, packageName)
 	if err != nil {
@@ -184,12 +198,9 @@ func (a *App) ExportRequirements(executable string) string {
 // --- Terminal ---
 
 func (a *App) OpenTerminal(executable string) string {
-	inst, ok := a.findInstallation(executable)
-	if !ok {
-		if a.lastScan == nil {
-			return "Scan first"
-		}
-		return "Not found"
+	inst, errMsg := a.requireInstallation(executable)
+	if errMsg != "" {
+		return errMsg
 	}
 	if err := analyzer.OpenTerminal(inst); err != nil {
 		return "Error: " + err.Error()
@@ -200,12 +211,9 @@ func (a *App) OpenTerminal(executable string) string {
 // --- Uninstall ---
 
 func (a *App) UninstallPython(executable string) *analyzer.UninstallResult {
-	inst, ok := a.findInstallation(executable)
-	if !ok {
-		if a.lastScan == nil {
-			return &analyzer.UninstallResult{Success: false, Message: "Scan first"}
-		}
-		return &analyzer.UninstallResult{Success: false, Message: "Not found"}
+	inst, errMsg := a.requireInstallation(executable)
+	if errMsg != "" {
+		return &analyzer.UninstallResult{Success: false, Message: errMsg}
 	}
 	return analyzer.Uninstall(inst)
 }
@@ -213,20 +221,28 @@ func (a *App) UninstallPython(executable string) *analyzer.UninstallResult {
 // --- Cache ---
 
 type CacheInfo struct {
-	PipSize int64  `json:"pipSize"`
-	PipPath string `json:"pipPath"`
-	UVSize  int64  `json:"uvSize"`
-	UVPath  string `json:"uvPath"`
+	PipSize   int64  `json:"pipSize"`
+	PipPath   string `json:"pipPath"`
+	UVSize    int64  `json:"uvSize"`
+	UVPath    string `json:"uvPath"`
+	CondaSize int64  `json:"condaSize"`
+	CondaPath string `json:"condaPath"`
 }
 
 func (a *App) GetCacheInfo() *CacheInfo {
 	pipSize, pipPath := analyzer.GetPipCacheSize()
 	uvSize, uvPath := analyzer.GetUVCacheSize()
-	return &CacheInfo{PipSize: pipSize, PipPath: pipPath, UVSize: uvSize, UVPath: uvPath}
+	condaSize, condaPath := analyzer.GetCondaCacheSize()
+	return &CacheInfo{
+		PipSize: pipSize, PipPath: pipPath,
+		UVSize: uvSize, UVPath: uvPath,
+		CondaSize: condaSize, CondaPath: condaPath,
+	}
 }
 
-func (a *App) CleanPipCache() *analyzer.UninstallResult { return analyzer.CleanPipCache() }
-func (a *App) CleanUVCache() *analyzer.UninstallResult  { return analyzer.CleanUVCache() }
+func (a *App) CleanPipCache() *analyzer.UninstallResult   { return analyzer.CleanPipCache() }
+func (a *App) CleanUVCache() *analyzer.UninstallResult    { return analyzer.CleanUVCache() }
+func (a *App) CleanCondaCache() *analyzer.UninstallResult { return analyzer.CleanCondaCache() }
 
 // --- Create Venv ---
 
@@ -282,9 +298,9 @@ func (a *App) UninstallPythonVersion(version string) string {
 // --- Add to PATH ---
 
 func (a *App) AddToPATH(executable string) string {
-	inst, ok := a.findInstallation(executable)
-	if !ok {
-		return "Installation not found"
+	inst, errMsg := a.requireInstallation(executable)
+	if errMsg != "" {
+		return errMsg
 	}
 	if err := analyzer.AddToPATH(inst.Path); err != nil {
 		return "Error: " + err.Error()
@@ -332,11 +348,11 @@ type ExportData struct {
 }
 
 type ExportInstallation struct {
-	Version    string   `json:"version"`
-	Source     string   `json:"source"`
-	Path       string   `json:"path"`
-	IsDefault  bool     `json:"isDefault"`
-	Packages   []string `json:"packages"`
+	Version   string   `json:"version"`
+	Source    string   `json:"source"`
+	Path      string   `json:"path"`
+	IsDefault bool     `json:"isDefault"`
+	Packages  []string `json:"packages"`
 }
 
 func (a *App) ExportEnvironment() string {
@@ -357,9 +373,9 @@ func (a *App) ExportEnvironment() string {
 		installs = append(installs, ExportInstallation{
 			Version:   inst.Version,
 			Source:    string(inst.Source),
-			Path:     inst.Path,
+			Path:      inst.Path,
 			IsDefault: inst.IsDefault,
-			Packages: pkgNames,
+			Packages:  pkgNames,
 		})
 	}
 
@@ -427,4 +443,17 @@ func (a *App) SetFullHomeScan(enabled bool) string {
 		return "Error: " + err.Error()
 	}
 	return "OK"
+}
+
+// --- Project Pins ---
+
+func (a *App) GetProjectPins() []detector.ProjectPin {
+	a.mu.RLock()
+	scan := a.lastScan
+	a.mu.RUnlock()
+	var installs []models.PythonInstallation
+	if scan != nil {
+		installs = scan.Installations
+	}
+	return detector.ScanProjectPins(config.Load().VenvScanPaths, installs)
 }

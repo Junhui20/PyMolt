@@ -91,10 +91,15 @@ func extractMajorMinor(ver string) string {
 
 // InstallPythonVersion installs a Python version via uv.
 func InstallPythonVersion(version string) (string, error) {
+	ver, err := cleanArg("version", version)
+	if err != nil {
+		return "", err
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "uv", "python", "install", version)
+	cmd := exec.CommandContext(ctx, "uv", "python", "install", ver)
 	hideWindow(cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -105,10 +110,15 @@ func InstallPythonVersion(version string) (string, error) {
 
 // UninstallPythonVersion removes a Python version via uv.
 func UninstallPythonVersion(version string) (string, error) {
+	ver, err := cleanArg("version", version)
+	if err != nil {
+		return "", err
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "uv", "python", "uninstall", version)
+	cmd := exec.CommandContext(ctx, "uv", "python", "uninstall", ver)
 	hideWindow(cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {

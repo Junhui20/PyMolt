@@ -4,6 +4,7 @@ import (
 	"context"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Junhui20/PyMolt/internal/models"
@@ -69,18 +70,35 @@ func CheckHealth(inst models.PythonInstallation) *HealthStatus {
 	return hs
 }
 
-// CheckAllHealth runs diagnostics on all installations.
+// CheckAllHealth runs diagnostics on all installations concurrently. Each health
+// check spawns several short-lived python subprocesses, so a bounded worker pool
+// is much faster than checking installations one at a time.
 func CheckAllHealth(installs []models.PythonInstallation) []*HealthStatus {
-	var results []*HealthStatus
-	for _, inst := range installs {
-		if inst.Source == models.SourceVenv {
-			if inst.Executable == "" {
-				continue
-			}
+	results := make([]*HealthStatus, len(installs))
+	sem := make(chan struct{}, 6)
+	var wg sync.WaitGroup
+	for i, inst := range installs {
+		if inst.Source == models.SourceVenv && inst.Executable == "" {
+			continue // leaves results[i] == nil; filtered out below
 		}
-		results = append(results, CheckHealth(inst))
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(i int, inst models.PythonInstallation) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			results[i] = CheckHealth(inst)
+		}(i, inst)
 	}
-	return results
+	wg.Wait()
+
+	// Compact out the skipped (nil) entries, preserving order.
+	out := results[:0]
+	for _, r := range results {
+		if r != nil {
+			out = append(out, r)
+		}
+	}
+	return out
 }
 
 func runPythonCmd(exe string, args ...string) bool {

@@ -20,6 +20,7 @@ func NewScanner() *Scanner {
 	return &Scanner{
 		detectors: []Detector{
 			OfficialDetector{},
+			PyManagerDetector{},
 			HomebrewDetector{},
 			UVDetector{},
 			PyenvDetector{},

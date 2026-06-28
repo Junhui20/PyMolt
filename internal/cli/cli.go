@@ -120,7 +120,7 @@ func cmdFix() {
 	// Cache
 	pipSize, _ := analyzer.GetPipCacheSize()
 	uvSize, _ := analyzer.GetUVCacheSize()
-	if pipSize+uvSize > 100*1024*1024 { // >100MB
+	if pipSize+uvSize > analyzer.CacheCleanThresholdBytes {
 		fmt.Printf("\n[!] Cache using %s (pip: %s, uv: %s)\n",
 			models.FormatSize(pipSize+uvSize), models.FormatSize(pipSize), models.FormatSize(uvSize))
 		issues++

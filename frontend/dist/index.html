@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Python Manager</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>PyMolt</title>
   <style>
     * {
       margin: 0;
@@ -993,7 +994,7 @@
 <body>
   <div class="hdr">
     <div class="hdr-l"><span style="font-size:20px">🐍</span>
-      <h1>Python <span>Manager</span></h1>
+      <h1>Py<span>Molt</span></h1>
     </div>
     <button class="btn primary" id="scanBtn" onclick="scan()">Scan System</button>
   </div>
@@ -1035,7 +1036,10 @@
       catch (e) { st('Error: ' + e); }
       b.disabled = false; b.classList.remove('scanning'); b.textContent = 'Scan System';
     }
-    async function loadBG() { try { H = await api().GetHealthCheck(); } catch (e) { } try { P = await api().GetPATHAnalysis(); } catch (e) { } }
+    // loadBG loads PATH analysis after a scan. Health checks are deferred until the
+    // Health tab is opened (see renderHealth) so we don't spawn N python processes
+    // on every scan when the user may never look at health.
+    async function loadBG() { H = null; try { P = await api().GetPATHAnalysis(); } catch (e) { } }
 
     function renderAll() {
       var i = S.installations || [], vc = 0, ts = S.totalSize || 0;
@@ -1069,7 +1073,7 @@
       var h = '<div class="tbl"><table style="table-layout:fixed"><colgroup><col style="width:140px"><col style="width:150px"><col style="width:60px"><col><col style="width:90px"></colgroup><thead><tr><th>Source</th><th>Version</th><th>Arch</th><th>Path</th><th style="text-align:right">Size</th></tr></thead><tbody>';
       inst.forEach(function (i, idx) {
         var c = selExe === i.Executable ? ' class="sel"' : ''; var ot = (i.IsOrphaned || oset[i.Executable]) ? '<span class="otag">ORPHANED</span>' : '';
-        h += '<tr' + c + ' onclick="selIdx(' + idx + ')"><td><span class="badge ' + bc(i.Source) + '">' + i.Source + '</span></td><td><span style="font-weight:600">' + i.Version + '</span>' + (i.IsDefault ? ' <span style="color:var(--orange)">DEFAULT</span>' : '') + ot + '</td><td style="color:var(--text3)">' + (i.Architecture || '-') + '</td><td class="path-cell" title="' + esc(i.Path) + '"><span class="mono">' + esc(i.Path) + '</span></td><td style="text-align:right;font-weight:600">' + fmtSize(i.SizeBytes) + '</td></tr>';
+        h += '<tr' + c + ' onclick="selIdx(' + idx + ')"><td><span class="badge ' + bc(i.Source) + '">' + esc(i.Source) + '</span></td><td><span style="font-weight:600">' + esc(i.Version) + '</span>' + eolBadge(i.EOL) + pep668Badge(i.ExternallyManaged) + (i.IsDefault ? ' <span style="color:var(--orange)">DEFAULT</span>' : '') + ot + '</td><td style="color:var(--text3)">' + esc(i.Architecture || '-') + '</td><td class="path-cell" title="' + esc(i.Path) + '"><span class="mono">' + esc(i.Path) + '</span></td><td style="text-align:right;font-weight:600">' + fmtSize(i.SizeBytes) + '</td></tr>';
       });
       h += '</tbody></table></div>'; document.getElementById('tInstall').innerHTML = h;
     }
@@ -1085,18 +1089,23 @@
       h += '<div class="tbl">'; if (e.length === 0) h += '<div class="empty">No Python-related PATH entries</div>';
       else e.forEach(function (x, i) {
         var cl = x.orphaned ? ' orph' : ''; h += '<div class="pe' + cl + '"><div class="idx">' + (i + 1) + '</div><div class="info"><div class="path">' + esc(x.path) + '</div>';
-        if (x.version) h += '<div style="font-size:11px;margin-top:2px;color:var(--text2)">Python ' + x.version + '</div>'; h += '</div><span class="ptag ' + x.source.toLowerCase() + '">' + x.source + '</span> ';
+        if (x.version) h += '<div style="font-size:11px;margin-top:2px;color:var(--text2)">Python ' + esc(x.version) + '</div>'; h += '</div><span class="ptag ' + x.source.toLowerCase() + '">' + esc(x.source) + '</span> ';
         if (x.orphaned) h += '<span class="ptag orphan">ORPHANED</span>'; else if (x.hasPython && i === 0) h += '<span class="ptag active">DEFAULT</span>'; h += '</div>';
       });
       h += '</div>'; el.innerHTML = h;
     }
 
-    function renderHealth() {
-      var el = document.getElementById('tHealth'); if (!H) { el.innerHTML = '<div class="loading">Running health checks...</div>'; return; }
+    async function renderHealth() {
+      var el = document.getElementById('tHealth');
+      if (!H) {
+        el.innerHTML = '<div class="loading">Running health checks...</div>';
+        try { H = await api().GetHealthCheck(); } catch (e) { el.innerHTML = '<div class="empty">Failed to run health checks</div>'; return; }
+        if (!H || H.length === 0) { el.innerHTML = '<div class="empty">No installations to check</div>'; return; }
+      }
       var h = '<div class="tbl"><table><thead><tr><th>Version</th><th>Python</th><th>pip</th><th>SSL</th><th>Site-Pkgs</th><th>Status</th></tr></thead><tbody>';
       H.forEach(function (x) {
         var c = x.overall === 'Healthy' ? 'hok' : (x.overall === 'Warning' ? 'hwarn' : 'hbad');
-        h += '<tr><td style="font-weight:600">' + x.version + '</td><td>' + ck(x.pythonOk) + '</td><td>' + ck(x.pipOk) + '</td><td>' + ck(x.sslOk) + '</td><td>' + ck(x.siteOk) + '</td><td><span class="' + c + '">' + x.overall + '</span></td></tr>';
+        h += '<tr><td style="font-weight:600">' + esc(x.version) + '</td><td>' + ck(x.pythonOk) + '</td><td>' + ck(x.pipOk) + '</td><td>' + ck(x.sslOk) + '</td><td>' + ck(x.siteOk) + '</td><td><span class="' + c + '">' + esc(x.overall) + '</span></td></tr>';
       });
       h += '</tbody></table></div>';
       var issues = []; H.forEach(function (x) { if (x.issues) x.issues.forEach(function (i) { issues.push(x.version + ': ' + i); }); });
@@ -1113,7 +1122,8 @@
         if (c.pipSize > 0) h += '<button class="btn sm" onclick="cleanPip()">Clean</button>'; h += '</div></div>';
         h += '<div class="cache-row"><div><div style="font-weight:600">uv cache</div><div class="mono" style="margin-top:2px">' + esc(c.uvPath) + '</div></div><div style="display:flex;align-items:center;gap:12px"><span style="font-weight:700;font-size:16px" class="orange">' + fmtSize(c.uvSize) + '</span>';
         if (c.uvSize > 0) h += '<button class="btn sm" onclick="cleanUV()">Clean</button>'; h += '</div></div>';
-        var total = c.pipSize + c.uvSize;
+        if (c.condaPath) { h += '<div class="cache-row"><div><div style="font-weight:600">conda packages</div><div class="mono" style="margin-top:2px">' + esc(c.condaPath) + '</div></div><div style="display:flex;align-items:center;gap:12px"><span style="font-weight:700;font-size:16px" class="orange">' + fmtSize(c.condaSize) + '</span>'; if (c.condaSize > 0) h += '<button class="btn sm" onclick="cleanConda()">Clean</button>'; h += '</div></div>'; }
+        var total = c.pipSize + c.uvSize + (c.condaSize || 0);
         h += '<div style="margin-top:16px;padding-top:16px;border-top:2px solid var(--border);display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:14px">Total reclaimable</span><span style="font-weight:800;font-size:20px" class="orange">' + fmtSize(total) + '</span></div>';
         if (total > 0) h += '<button class="btn primary gap-lg" onclick="cleanAll()" style="width:100%;justify-content:center;padding:10px">Clean All Caches</button>';
         h += '</div>'; el.innerHTML = h;
@@ -1125,8 +1135,9 @@
       _curExe = exe; selExe = exe; renderInst();
       var inst = (S.installations || []).find(function (i) { return i.Executable === exe; }); if (!inst) return;
       var sp = document.getElementById('sp'); sp.classList.add('open');
-      var h = '<div class="sph"><h3>Python ' + inst.Version + '</h3><button class="spc" onclick="closeSP()">&#10005;</button></div>';
+      var h = '<div class="sph"><h3>Python ' + esc(inst.Version) + '</h3><button class="spc" onclick="closeSP()">&#10005;</button></div>';
       h += '<div class="sps"><h4>Details</h4>' + sr('Version', inst.Version) + sr('Source', inst.Source) + sr('Architecture', inst.Architecture || '-') + sr('Size', fmtSize(inst.SizeBytes)) + '<div class="spr" style="margin-top:4px"><span class="k">Path</span></div><div class="mono" style="font-size:10px;word-break:break-all;margin-top:2px">' + esc(inst.Path) + '</div></div>';
+      if (inst.ExternallyManaged) h += '<div class="alert alert-warn" style="margin:8px 0;font-size:11px">&#9888; pip is blocked for this Python (<b>PEP 668</b>, externally managed). Create a virtual environment (Tools tab) to install packages safely.</div>';
       h += '<div class="sps"><h4>Actions</h4><div class="action-grid">';
       h += '<button class="action-btn primary-action" onclick="doAction(\'term\')"><span class="icon">&#128421;</span><div><div class="label">Open Terminal</div><div class="sublabel">Launch cmd with this Python active</div></div></button>';
       h += '<button class="action-btn" onclick="doAction(\'default\')"><span class="icon">&#11088;</span><div><div class="label">Set as Default</div><div class="sublabel">Move to front of PATH</div></div></button>';
@@ -1165,7 +1176,8 @@
     }
     async function cleanPip() { try { var r = await api().CleanPipCache(); st(r.message); renderCache(); } catch (e) { st('Error'); } }
     async function cleanUV() { try { var r = await api().CleanUVCache(); st(r.message); renderCache(); } catch (e) { st('Error'); } }
-    async function cleanAll() { if (!confirm('Clean all caches?')) return; await cleanPip(); await cleanUV(); }
+    async function cleanConda() { try { var r = await api().CleanCondaCache(); st(r.message); renderCache(); } catch (e) { st('Error'); } }
+    async function cleanAll() { if (!confirm('Clean all caches?')) return; await cleanPip(); await cleanUV(); try { var c = await api().GetCacheInfo(); if (c && c.condaSize > 0) await cleanConda(); } catch (e) {} }
 
     // --- Fix My Python ---
     async function renderFix() {
@@ -1191,7 +1203,7 @@
               h += '<div class="fix-card ' + i.severity + '">';
               h += '<div style="flex:1"><div class="fix-title">' + esc(i.title) + '</div><div class="fix-desc">' + esc(i.description) + '</div></div>';
               if (i.spaceSaved > 0) h += '<span class="fix-space">' + fmtSize(i.spaceSaved) + '</span>';
-              h += '<button class="btn sm primary" onclick="execFix(\'' + esc(i.fixAction) + '\')">' + esc(i.fixLabel) + '</button>';
+              h += '<button class="btn sm primary" onclick="execFix(\'' + escJs(i.fixAction) + '\')">' + esc(i.fixLabel) + '</button>';
               h += '</div>';
             });
             h += '</div>';
@@ -1236,16 +1248,16 @@
       if (!_curExe && installs.length > 0) _curExe = installs[0].Executable;
       installs.forEach(function (i) {
         var sel = i.Executable === _curExe ? ' selected' : '';
-        h += '<option value="' + esc(i.Executable) + '"' + sel + '>Python ' + i.Version + ' (' + i.Source + ')</option>';
+        h += '<option value="' + esc(i.Executable) + '"' + sel + '>Python ' + esc(i.Version) + ' (' + esc(i.Source) + ')</option>';
       });
       h += '</select></div>';
 
       // Search
-      h += '<div class="mp-search"><input class="input" id="mpSearchInput" placeholder="Search 1500+ packages or any PyPI package..." value="' + esc(_mpSearch) + '" onkeydown="if(event.key===\'Enter\')searchMP()"><button class="btn primary" onclick="searchMP()">Search PyPI</button></div>';
+      h += '<div class="mp-search"><input class="input" id="mpSearchInput" placeholder="Search 2,600+ packages or any PyPI package..." value="' + esc(_mpSearch) + '" onkeydown="if(event.key===\'Enter\')searchMP()"><button class="btn primary" onclick="searchMP()">Search PyPI</button></div>';
 
       // Categories
       var cats = ['All'].concat(_mpCats || []);
-      h += '<div class="mp-cats">'; cats.forEach(function (c) { h += '<button class="mp-cat-btn' + (c === _mpCat ? ' active' : '') + '" onclick="filterCat(\'' + esc(c) + '\')">' + c + '</button>'; }); h += '</div>';
+      h += '<div class="mp-cats">'; cats.forEach(function (c) { h += '<button class="mp-cat-btn' + (c === _mpCat ? ' active' : '') + '" onclick="filterCat(\'' + escJs(c) + '\')">' + esc(c) + '</button>'; }); h += '</div>';
 
       // Filter
       var filtered = _mpCat === 'All' ? _mpData : _mpData.filter(function (p) { return p.category === _mpCat; });
@@ -1262,7 +1274,7 @@
         h += '</div>';
         h += '<div class="mp-sum">' + esc(p.description) + '</div>';
         h += '<div class="mp-meta"><span class="mp-cat-tag">' + esc(p.category) + '</span>';
-        h += '<button class="btn sm primary" onclick="event.stopPropagation();installFromMP(\'' + esc(installName) + '\')">Install</button>';
+        h += '<button class="btn sm primary" onclick="event.stopPropagation();installFromMP(\'' + escJs(installName) + '\')">Install</button>';
         h += '</div></div>';
       });
       if (filtered.length > 60) h += '<div style="padding:20px;text-align:center;color:var(--text3);grid-column:1/-1">Showing first 60 of ' + filtered.length + '. Use search to narrow down.</div>';
@@ -1315,9 +1327,9 @@
         h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">';
         installed.forEach(function (v) {
           h += '<div class="tbl" style="padding:14px;display:flex;justify-content:space-between;align-items:center">';
-          h += '<div><div style="font-weight:700;font-size:15px">Python ' + v.version + '</div>';
+          h += '<div><div style="font-weight:700;font-size:15px">Python ' + esc(v.version) + '</div>';
           h += '<div class="mono" style="margin-top:2px" title="' + esc(v.path) + '">' + esc(shortPath(v.path)) + '</div></div>';
-          h += '<button class="btn sm danger" onclick="uninstallVer(\'' + v.version + '\')">Remove</button>';
+          h += '<button class="btn sm danger" onclick="uninstallVer(\'' + escJs(v.version) + '\')">Remove</button>';
           h += '</div>';
         });
         h += '</div></div>';
@@ -1327,8 +1339,8 @@
         available.forEach(function (v) {
           var mm = v.version.split('.').slice(0, 2).join('.');
           h += '<div class="tbl" style="padding:14px;display:flex;justify-content:space-between;align-items:center">';
-          h += '<div style="font-weight:700;font-size:15px">Python ' + v.version + '</div>';
-          h += '<button class="btn sm primary" onclick="installVer(\'' + mm + '\')">Install</button>';
+          h += '<div style="font-weight:700;font-size:15px">Python ' + esc(v.version) + '</div>';
+          h += '<button class="btn sm primary" onclick="installVer(\'' + escJs(mm) + '\')">Install</button>';
           h += '</div>';
         });
         h += '</div></div>';
@@ -1361,8 +1373,10 @@
       if (!scanCfg) await loadScanCfg();
       var inst = (S && S.installations) || [];
       var pyOpts = '';
-      inst.forEach(function (i) { if (i.Source !== 'Virtual Environment') pyOpts += '<option value="' + esc(i.Executable) + '">Python ' + i.Version + ' (' + esc(i.Source) + ')</option>'; });
+      inst.forEach(function (i) { if (i.Source !== 'Virtual Environment') pyOpts += '<option value="' + esc(i.Executable) + '">Python ' + esc(i.Version) + ' (' + esc(i.Source) + ')</option>'; });
       var h = '';
+      // Project Python pins (resolved asynchronously after render)
+      h += '<div class="tbl" style="padding:20px;margin-bottom:16px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">Project Python Pins</div><div style="font-size:12px;color:var(--text2);margin-bottom:12px">.python-version / .tool-versions / mise.toml pins found in your scan directories, resolved against installed Pythons.</div><div id="projectPins"><div class="loading">Scanning project directories…</div></div></div>';
       // Venv Scan Paths
       h += '<div class="tbl" style="padding:20px;margin-bottom:16px">';
       h += '<div style="font-size:14px;font-weight:700;margin-bottom:4px">Venv Scan Directories</div>';
@@ -1379,7 +1393,7 @@
         paths.forEach(function (p) {
           h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:4px;font-size:12px">';
           h += '<span style="flex:1;font-family:monospace">' + esc(p) + '</span>';
-          h += '<button class="btn" style="padding:4px 10px;font-size:11px" onclick="removeScanPath(\'' + esc(p).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\')">Remove</button>';
+          h += '<button class="btn" style="padding:4px 10px;font-size:11px" onclick="removeScanPath(\'' + escJs(p) + '\')">Remove</button>';
           h += '</div>';
         });
         h += '</div>';
@@ -1419,6 +1433,27 @@
       h += '<button class="btn" style="margin-top:10px" onclick="checkUpdate()">Check Now</button>';
       h += '</div>';
       el.innerHTML = h;
+      loadProjectPins();
+    }
+    async function loadProjectPins() {
+      var box = document.getElementById('projectPins');
+      if (!box) return;
+      try {
+        var pins = await api().GetProjectPins();
+        if (!pins || pins.length === 0) { box.innerHTML = '<div style="font-size:12px;color:var(--text3)">No version pins found in your scan directories.</div>'; return; }
+        var h = '';
+        pins.forEach(function (p) {
+          var badge = p.installed
+            ? '<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;color:#fff;background:#16a34a">INSTALLED</span>'
+            : '<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;color:#fff;background:var(--red)">MISSING</span>';
+          h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:4px;font-size:12px">';
+          h += '<span style="font-weight:700;white-space:nowrap">Python ' + esc(p.pinned) + '</span> ' + badge;
+          h += '<span style="flex:1;font-family:monospace;color:var(--text3);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(p.dir) + ' <span style="color:var(--text2)">(' + esc(p.file) + ')</span></span>';
+          if (!p.installed) h += '<button class="btn" style="padding:4px 10px;font-size:11px" onclick="installVer(\'' + escJs(p.pinned) + '\')">Install</button>';
+          h += '</div>';
+        });
+        box.innerHTML = h;
+      } catch (e) { box.innerHTML = '<div style="font-size:12px;color:var(--red)">Failed to scan project pins</div>'; }
     }
     async function addScanPath() {
       var p = document.getElementById('newScanPath').value.trim();
@@ -1493,10 +1528,27 @@
 
     function closeSP() { selExe = null; document.getElementById('sp').classList.remove('open'); if (S) renderInst(); }
     function ck(v) { return v ? '<span class="hok">&#10003;</span>' : '<span class="hbad">&#10007;</span>'; }
-    function sr(k, v) { return '<div class="spr"><span class="k">' + k + '</span><span class="vl">' + v + '</span></div>'; }
-    function bc(s) { return { 'uv': 'badge-uv', 'Official Installer': 'badge-official', 'System / Official': 'badge-official', 'pyenv': 'badge-pyenv', 'pyenv-win': 'badge-pyenv', 'Conda/Miniconda': 'badge-conda', 'Chocolatey': 'badge-chocolatey', 'Microsoft Store': 'badge-store', 'Scoop': 'badge-scoop', 'Virtual Environment': 'badge-venv', 'Homebrew': 'badge-homebrew', 'System': 'badge-system', 'IDE Config': 'badge-ide' }[s] || ''; }
+    function sr(k, v) { return '<div class="spr"><span class="k">' + esc(k) + '</span><span class="vl">' + esc(v) + '</span></div>'; }
+    function bc(s) { return { 'uv': 'badge-uv', 'Official Installer': 'badge-official', 'System / Official': 'badge-official', 'pyenv': 'badge-pyenv', 'pyenv-win': 'badge-pyenv', 'Conda/Miniconda': 'badge-conda', 'Chocolatey': 'badge-chocolatey', 'Microsoft Store': 'badge-store', 'PyManager': 'badge-official', 'Scoop': 'badge-scoop', 'Virtual Environment': 'badge-venv', 'Homebrew': 'badge-homebrew', 'System': 'badge-system', 'IDE Config': 'badge-ide' }[s] || ''; }
     function fmtSize(b) { if (!b) return '0 B'; var u = ['B', 'KB', 'MB', 'GB'], i = 0, s = b; while (s >= 1024 && i < 3) { s /= 1024; i++; } return s.toFixed(1) + ' ' + u[i]; }
-    function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    // esc encodes a value for HTML text and double-quoted attribute contexts.
+    function esc(s) { if (s == null || s === '') return ''; return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+    // escJs encodes a value for a single-quoted JS string that itself sits inside
+    // a double-quoted HTML attribute (e.g. onclick="fn('+escJs(x)+')"): backslash
+    // and quote are JS-escaped, and HTML metacharacters are entity-encoded.
+    function escJs(s) { if (s == null) return ''; return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/[\r\n]+/g, ' '); }
+    // eolBadge renders a small upstream-support chip next to a Python version.
+    function eolBadge(e) {
+      if (!e || !e.Status) return '';
+      var m = { supported: ['#16a34a', 'OK'], security: ['var(--orange)', 'SECURITY'], eol: ['var(--red)', 'EOL'] };
+      var v = m[e.Status]; if (!v) return '';
+      return ' <span title="' + esc(e.Label || '') + '" style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;color:#fff;vertical-align:middle;background:' + v[0] + '">' + v[1] + '</span>';
+    }
+    // pep668Badge flags interpreters where `pip install` is blocked (PEP 668).
+    function pep668Badge(b) {
+      if (!b) return '';
+      return ' <span title="pip install is blocked for this Python (PEP 668, externally managed). Create a virtual environment to install packages." style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;color:#fff;vertical-align:middle;background:#7c3aed">PEP 668</span>';
+    }
     function st(m) { document.getElementById('status').textContent = m; }
     function show(id) { document.getElementById(id).style.display = 'block'; }
     function hide(id) { document.getElementById(id).style.display = 'none'; }

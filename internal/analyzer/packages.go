@@ -75,10 +75,15 @@ func ListOutdated(executable string) ([]OutdatedPackage, error) {
 
 // InstallPackage installs a package into the given Python environment.
 func InstallPackage(executable, packageName string) (string, error) {
+	name, err := cleanArg("package name", packageName)
+	if err != nil {
+		return "", err
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, executable, "-m", "pip", "install", packageName, "--disable-pip-version-check")
+	cmd := exec.CommandContext(ctx, executable, "-m", "pip", "install", name, "--disable-pip-version-check")
 	hideWindow(cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -89,10 +94,15 @@ func InstallPackage(executable, packageName string) (string, error) {
 
 // UninstallPackage removes a package from the given Python environment.
 func UninstallPackage(executable, packageName string) (string, error) {
+	name, err := cleanArg("package name", packageName)
+	if err != nil {
+		return "", err
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, executable, "-m", "pip", "uninstall", packageName, "-y", "--disable-pip-version-check")
+	cmd := exec.CommandContext(ctx, executable, "-m", "pip", "uninstall", name, "-y", "--disable-pip-version-check")
 	hideWindow(cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {

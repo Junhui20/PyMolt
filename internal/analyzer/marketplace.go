@@ -8,9 +8,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/Junhui20/PyMolt/internal/config"
 )
 
 // MarketplacePackage represents a package from the catalog.
@@ -39,7 +42,7 @@ type PyPIPackageDetail struct {
 var (
 	catalogCache []MarketplacePackage
 	catalogMu    sync.RWMutex
-	cacheFile    = filepath.Join(os.Getenv("APPDATA"), "PythonManager", "catalog.json")
+	cacheFile    = filepath.Join(config.Dir(), "catalog.json")
 )
 
 // LoadCatalog fetches the awesome-python dataset from GitHub or local cache.
@@ -94,7 +97,7 @@ func fetchAwesomePython() ([]MarketplacePackage, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "PythonManager/1.0")
+	req.Header.Set("User-Agent", "PyMolt/1.0")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -102,11 +105,12 @@ func fetchAwesomePython() ([]MarketplacePackage, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("GitHub returned %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	// Bound the read so a huge/hostile response can't exhaust memory.
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +200,7 @@ func FetchPyPIDetail(packageName string) (*PyPIPackageDetail, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "PythonManager/1.0")
+	req.Header.Set("User-Agent", "PyMolt/1.0")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -204,11 +208,11 @@ func FetchPyPIDetail(packageName string) (*PyPIPackageDetail, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("package not found on PyPI")
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
 	if err != nil {
 		return nil, err
 	}
@@ -231,18 +235,18 @@ func FetchPyPIDetail(packageName string) (*PyPIPackageDetail, error) {
 		return nil, err
 	}
 
-	// Get last 10 versions
+	// Collect all release versions, sort newest-first, then keep the latest 10.
+	// PyPI's "releases" object is a JSON map, so iteration order is random; sort
+	// explicitly instead of assuming the map yields them in order.
 	var versions []string
 	for v := range data.Releases {
 		versions = append(versions, v)
 	}
-	// Sort descending (simple reverse since PyPI returns them roughly ordered)
+	sort.Slice(versions, func(i, j int) bool {
+		return compareVersions(versions[i], versions[j]) > 0
+	})
 	if len(versions) > 10 {
-		versions = versions[len(versions)-10:]
-	}
-	// Reverse
-	for i, j := 0, len(versions)-1; i < j; i, j = i+1, j-1 {
-		versions[i], versions[j] = versions[j], versions[i]
+		versions = versions[:10]
 	}
 
 	return &PyPIPackageDetail{

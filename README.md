@@ -1,5 +1,11 @@
 # PyMolt
 
+[![Build](https://github.com/Junhui20/PyMolt/actions/workflows/build.yml/badge.svg)](https://github.com/Junhui20/PyMolt/actions/workflows/build.yml)
+[![Release](https://img.shields.io/github/v/release/Junhui20/PyMolt)](https://github.com/Junhui20/PyMolt/releases)
+[![Downloads](https://img.shields.io/github/downloads/Junhui20/PyMolt/total)](https://github.com/Junhui20/PyMolt/releases)
+![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
+[![License: MIT](https://img.shields.io/github/license/Junhui20/PyMolt)](LICENSE)
+
 > Scan, fix, and manage all your Python installations in one place.
 
 PyMolt is a lightweight cross-platform desktop app that detects every Python on your system — official installs, uv, pyenv, Homebrew, conda, system packages, and virtual environments — and gives you tools to clean up the mess.
@@ -65,6 +71,46 @@ Download the latest binary from [Releases](https://github.com/Junhui20/PyMolt/re
 | macOS    | `pymolt-macos` |
 | Linux    | `pymolt-linux` |
 
+> [!NOTE]
+> The binaries are **not yet code-signed**, so your OS will warn on first launch.
+> That's expected for a new open-source project — the source is public and builds
+> are produced by GitHub Actions.
+
+### First launch
+
+**macOS** — Gatekeeper blocks unsigned apps. Clear the quarantine flag, then run:
+
+```bash
+xattr -dr com.apple.quarantine ./pymolt-macos
+chmod +x ./pymolt-macos
+./pymolt-macos
+```
+
+(Or right-click the binary → **Open** → **Open**, or System Settings → Privacy & Security → **Open Anyway**.)
+
+**Windows** — SmartScreen may warn: click **More info** → **Run anyway**.
+
+**Linux** —
+
+```bash
+chmod +x ./pymolt-linux
+./pymolt-linux
+```
+
+### Verify your download (optional)
+
+Each release publishes `SHA256SUMS.txt`:
+
+```bash
+# Linux / macOS
+sha256sum -c SHA256SUMS.txt        # or: shasum -a 256 -c SHA256SUMS.txt
+```
+
+```powershell
+# Windows (PowerShell)
+Get-FileHash .\pymolt-windows.exe -Algorithm SHA256
+```
+
 ### Build from source
 
 ```bash
@@ -72,8 +118,13 @@ Download the latest binary from [Releases](https://github.com/Junhui20/PyMolt/re
 # Linux also needs: libgtk-3-dev libwebkit2gtk-4.0-dev
 git clone https://github.com/Junhui20/PyMolt.git
 cd PyMolt
-go mod tidy
 CGO_ENABLED=1 go build -tags desktop,production -ldflags "-s -w" -o pymolt .
+```
+
+Or, if you have Go set up and just want it on your PATH:
+
+```bash
+go install github.com/Junhui20/PyMolt@latest
 ```
 
 ## How It Works
@@ -132,9 +183,22 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 # Then use PyMolt to manage everything visually
 ```
 
+## Safety & privacy
+
+PyMolt can edit your PATH and delete Python installations, so it only acts when you
+explicitly click an action. Destructive operations (uninstall/delete) are guarded
+against protected system and home directories, and your PATH is backed up before a
+repair. Note that deleting a venv or installation is **irreversible**. See
+[SECURITY.md](SECURITY.md) for exactly what PyMolt changes on your system.
+
+No data leaves your machine except fetching the package catalog, searching PyPI,
+and checking for updates. No telemetry.
+
 ## Contributing
 
-Contributions welcome! Please open an issue first to discuss what you'd like to change.
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) and open
+an issue first to discuss substantial changes. By participating you agree to the
+[Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 

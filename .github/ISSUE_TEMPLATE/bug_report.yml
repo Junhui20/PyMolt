@@ -1,0 +1,50 @@
+name: Bug report
+description: Report something that isn't working
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug! For security issues, please use
+        [private reporting](https://github.com/Junhui20/PyMolt/security/advisories/new) instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+      placeholder: When I clicked "Repair PATH", ...
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open PyMolt
+        2. Scan
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: PyMolt version
+      description: Run `pymolt help` (the version is printed), or paste the release tag.
+    validations:
+      required: true
+  - type: textarea
+    id: scan-output
+    attributes:
+      label: Relevant CLI output (optional)
+      description: Output of `pymolt scan` / `pymolt health` / `pymolt path` if relevant. Redact private paths if needed.
+      render: shell

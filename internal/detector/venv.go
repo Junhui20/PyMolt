@@ -89,8 +89,8 @@ func centralVenvDirs() []string {
 
 	switch runtime.GOOS {
 	case "windows":
-		local := os.Getenv("LOCALAPPDATA")  // C:\Users\X\AppData\Local
-		roaming := os.Getenv("APPDATA")      // C:\Users\X\AppData\Roaming
+		local := os.Getenv("LOCALAPPDATA") // C:\Users\X\AppData\Local
+		roaming := os.Getenv("APPDATA")    // C:\Users\X\AppData\Roaming
 
 		// Poetry
 		if local != "" {
@@ -162,6 +162,14 @@ var skipDirs = map[string]bool{
 	".docker":      true,
 	".vscode":      true,
 	"OneDrive":     true,
+	// Heavy build/cache directories that never contain a venv we want to surface.
+	".tox":          true,
+	".mypy_cache":   true,
+	".pytest_cache": true,
+	".ruff_cache":   true,
+	"build":         true,
+	"dist":          true,
+	"site-packages": true,
 }
 
 func (d VenvDetector) scanDir(dir string, depth, maxDepth int, results *[]models.PythonInstallation) {
@@ -201,7 +209,7 @@ func (d VenvDetector) parseVenvConfig(venvDir, cfgPath string) *models.PythonIns
 	}
 	defer f.Close()
 
-	var version, home string
+	var version string
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -217,23 +225,12 @@ func (d VenvDetector) parseVenvConfig(venvDir, cfgPath string) *models.PythonIns
 				if version == "" {
 					version = cleanVersionInfo(v)
 				}
-			case "home":
-				home = v
 			}
 		}
 	}
 
 	if version == "" {
 		return nil
-	}
-
-	// Check if base Python still exists
-	if home != "" {
-		for _, name := range pythonExeNames() {
-			if _, err := os.Stat(filepath.Join(home, name)); err == nil {
-				break
-			}
-		}
 	}
 
 	scriptsDir := filepath.Join(venvDir, venvScriptsDir())

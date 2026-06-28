@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Junhui20/PyMolt/internal/config"
 	"golang.org/x/sys/windows/registry"
 )
 
@@ -74,7 +75,7 @@ func BackupPATH() (string, error) {
 		return "", err
 	}
 
-	backupDir := filepath.Join(os.Getenv("APPDATA"), "PythonManager")
+	backupDir := config.Dir()
 	if err := os.MkdirAll(backupDir, 0755); err != nil {
 		return "", fmt.Errorf("failed to create backup directory: %w", err)
 	}

@@ -15,21 +15,22 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
-var windowsDangerousPrefixes = []string{
-	`c:\`,
-	`c:\windows`,
-	`c:\program files`,
-	`c:\program files (x86)`,
-	`c:\users`,
-}
-
-func isDangerousPath(clean string) bool {
-	for _, prefix := range windowsDangerousPrefixes {
-		if clean == prefix {
-			return true
-		}
+// platformProtectedPaths lists absolute directories that must never be deleted on Windows.
+func platformProtectedPaths() []string {
+	paths := []string{
+		`C:\`, `C:\Windows`, `C:\Windows\System32`, `C:\Program Files`,
+		`C:\Program Files (x86)`, `C:\Users`, `C:\ProgramData`,
 	}
-	return false
+	if sr := os.Getenv("SystemRoot"); sr != "" {
+		paths = append(paths, sr)
+	}
+	if pd := os.Getenv("ProgramData"); pd != "" {
+		paths = append(paths, pd)
+	}
+	if up := os.Getenv("USERPROFILE"); up != "" {
+		paths = append(paths, up)
+	}
+	return paths
 }
 
 func uninstallUV(inst models.PythonInstallation) *UninstallResult {

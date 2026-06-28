@@ -24,6 +24,12 @@ func init() {
 	filePath = filepath.Join(configDir(), "config.json")
 }
 
+// Dir returns the OS-appropriate configuration/data directory for PyMolt.
+// Other packages use it to store caches and backups in a consistent location.
+func Dir() string {
+	return configDir()
+}
+
 // configDir returns the OS-appropriate config directory for PyMolt.
 func configDir() string {
 	switch runtime.GOOS {

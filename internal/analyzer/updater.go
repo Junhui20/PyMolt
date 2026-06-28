@@ -43,11 +43,11 @@ func CheckForUpdate() *UpdateInfo {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return info
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
 	if err != nil {
 		return info
 	}
@@ -73,18 +73,7 @@ func CheckForUpdate() *UpdateInfo {
 	return info
 }
 
-// isNewer returns true if a > b using simple semver comparison.
+// isNewer returns true if version a is strictly newer than version b.
 func isNewer(a, b string) bool {
-	aParts := strings.Split(a, ".")
-	bParts := strings.Split(b, ".")
-
-	for i := 0; i < len(aParts) && i < len(bParts); i++ {
-		if aParts[i] > bParts[i] {
-			return true
-		}
-		if aParts[i] < bParts[i] {
-			return false
-		}
-	}
-	return len(aParts) > len(bParts)
+	return compareVersions(a, b) > 0
 }

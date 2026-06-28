@@ -18,6 +18,10 @@ type CreateVenvResult struct {
 func CreateVenv(pythonExe, targetDir, name string) *CreateVenvResult {
 	venvPath := targetDir
 	if name != "" {
+		// Prevent path traversal / argument injection via the venv name.
+		if strings.ContainsAny(name, `/\`) || strings.Contains(name, "..") || strings.HasPrefix(name, "-") {
+			return &CreateVenvResult{Success: false, Message: "Invalid venv name: avoid path separators, '..', and a leading '-'"}
+		}
 		venvPath = filepath.Join(targetDir, name)
 	}
 

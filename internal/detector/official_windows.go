@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/Junhui20/PyMolt/internal/models"
-	"golang.org/x/sys/windows/registry"
 )
 
 // OfficialDetector finds Python installed via python.org installer.
@@ -30,40 +29,15 @@ func (d OfficialDetector) Detect() []models.PythonInstallation {
 
 func (d OfficialDetector) fromRegistry() []models.PythonInstallation {
 	var results []models.PythonInstallation
-
-	keys := []struct {
-		root registry.Key
-		path string
-	}{
-		{registry.LOCAL_MACHINE, `SOFTWARE\Python\PythonCore`},
-		{registry.CURRENT_USER, `SOFTWARE\Python\PythonCore`},
-		{registry.LOCAL_MACHINE, `SOFTWARE\WOW6432Node\Python\PythonCore`},
-	}
-
-	for _, k := range keys {
-		parent, err := registry.OpenKey(k.root, k.path, registry.READ)
-		if err != nil {
+	// Vendor-agnostic PEP 514 read: every Company\Tag under SOFTWARE\Python, not
+	// just PythonCore. ContinuumAnalytics (conda) and %LocalAppData%\Python
+	// (PyManager) are owned by their dedicated detectors, so skip them here.
+	for _, e := range enumeratePEP514() {
+		if strings.EqualFold(e.Company, "ContinuumAnalytics") || underLocalAppDataPython(e.InstallPath) {
 			continue
 		}
-		versions, err := parent.ReadSubKeyNames(-1)
-		parent.Close()
-		if err != nil {
-			continue
-		}
-		for _, ver := range versions {
-			installKey, err := registry.OpenKey(k.root, k.path+`\`+ver+`\InstallPath`, registry.READ)
-			if err != nil {
-				continue
-			}
-			installPath, _, err := installKey.GetStringValue("")
-			installKey.Close()
-			if err != nil || installPath == "" {
-				continue
-			}
-			inst := MakeInstallation(strings.TrimRight(installPath, `\`), models.SourceOfficial)
-			if inst != nil {
-				results = append(results, *inst)
-			}
+		if inst := MakeInstallation(e.InstallPath, models.SourceOfficial); inst != nil {
+			results = append(results, *inst)
 		}
 	}
 	return results

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/Junhui20/PyMolt/internal/models"
 )
@@ -24,12 +25,26 @@ func OpenTerminal(inst models.PythonInstallation) error {
 		cmd.Dir = filepath.Dir(inst.Path)
 		cmd.Args = []string{"cmd", "/k", activateScript}
 	} else {
+		// Defense in depth: a quote or newline in the path could break out of the
+		// batch `set "PATH=..."` line. Windows filenames cannot contain these, but
+		// reject them rather than build a malformed/injected command.
+		if strings.ContainsAny(inst.Path, "\"\r\n") || strings.ContainsAny(inst.Version, "\"\r\n%") {
+			return fmt.Errorf("refusing to open terminal: path or version contains invalid characters")
+		}
 		batContent := fmt.Sprintf("@echo off\r\ntitle Python %s\r\nset \"PATH=%s;%%PATH%%\"\r\npython --version\r\n",
 			inst.Version, inst.Path)
-		batFile := filepath.Join(os.TempDir(), "pymanager_term.bat")
-		if err := os.WriteFile(batFile, []byte(batContent), 0644); err != nil {
+		// Use a randomly-named temp file (not a predictable shared name) so another
+		// user cannot pre-create or symlink it before we execute it.
+		f, err := os.CreateTemp("", "pymolt_term_*.bat")
+		if err != nil {
+			return fmt.Errorf("failed to create temp bat: %w", err)
+		}
+		batFile := f.Name()
+		if _, err := f.WriteString(batContent); err != nil {
+			f.Close()
 			return fmt.Errorf("failed to write temp bat: %w", err)
 		}
+		f.Close()
 		cmd = exec.Command("cmd", "/k", batFile)
 	}
 

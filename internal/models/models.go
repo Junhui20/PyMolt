@@ -16,6 +16,7 @@ const (
 	SourceChocolatey PythonSource = "Chocolatey"
 	SourceScoop      PythonSource = "Scoop"
 	SourceStore      PythonSource = "Microsoft Store"
+	SourcePyManager  PythonSource = "PyManager"
 	SourceHomebrew   PythonSource = "Homebrew"
 	SourceSystem     PythonSource = "System"
 	SourceVenv       PythonSource = "Virtual Environment"
@@ -32,18 +33,28 @@ const (
 	RiskDangerous RiskLevel = "Dangerous"
 )
 
+// EOLStatus describes the upstream support status of a Python major.minor line.
+type EOLStatus struct {
+	Status           string // "supported" | "security" | "eol" | "unknown"
+	EndOfFullSupport string // YYYY-MM-DD: bugfix releases stop (security-only after)
+	EndOfLife        string // YYYY-MM-DD: security support ends
+	Label            string // human-readable summary
+}
+
 // PythonInstallation represents a single Python found on the system.
 type PythonInstallation struct {
-	Version      string       // e.g. "3.13.9"
-	MajorMinor   string       // e.g. "3.13"
-	Path         string       // directory containing python.exe
-	Executable   string       // full path to python.exe
-	Source       PythonSource // how it was installed
-	SizeBytes    int64        // disk usage
-	InPath       bool         // present in system/user PATH
-	IsDefault    bool         // the one invoked by bare `python` command
-	Architecture string       // "64-bit" or "32-bit"
-	IsOrphaned   bool         // venv whose base Python no longer exists
+	Version           string       // e.g. "3.13.9"
+	MajorMinor        string       // e.g. "3.13"
+	Path              string       // directory containing python.exe
+	Executable        string       // full path to python.exe
+	Source            PythonSource // how it was installed
+	SizeBytes         int64        // disk usage
+	InPath            bool         // present in system/user PATH
+	IsDefault         bool         // the one invoked by bare `python` command
+	Architecture      string       // "64-bit" or "32-bit"
+	IsOrphaned        bool         // venv whose base Python no longer exists
+	EOL               EOLStatus    // upstream support status for this major.minor
+	ExternallyManaged bool         // pip install blocked by PEP 668 (externally managed)
 }
 
 // DisplaySize returns a human-readable size string.
@@ -58,15 +69,15 @@ func (p PythonInstallation) BaseName() string {
 
 // DuplicateGroup is a set of installations with the same major.minor version.
 type DuplicateGroup struct {
-	Version       string                // e.g. "3.13"
+	Version       string // e.g. "3.13"
 	Installations []PythonInstallation
-	RecommendKeep *PythonInstallation   // which one to keep
+	RecommendKeep *PythonInstallation // which one to keep
 }
 
 // CleanupRecommendation is a suggested action for one installation.
 type CleanupRecommendation struct {
 	Installation PythonInstallation
-	Action       string    // "Uninstall", "Delete", "Remove from PATH", "Keep"
+	Action       string // "Uninstall", "Delete", "Remove from PATH", "Keep"
 	Reason       string
 	Risk         RiskLevel
 	SpaceSaved   int64

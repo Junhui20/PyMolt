@@ -14,8 +14,15 @@ import (
 	"github.com/Junhui20/PyMolt/internal/models"
 )
 
-func isDangerousPath(clean string) bool {
-	return dangerousPaths[clean]
+// platformProtectedPaths lists absolute directories that must never be deleted on Unix.
+func platformProtectedPaths() []string {
+	return []string{
+		"/", "/bin", "/sbin", "/boot", "/dev", "/etc", "/home", "/lib", "/lib32",
+		"/lib64", "/opt", "/proc", "/root", "/run", "/srv", "/sys", "/tmp",
+		"/usr", "/usr/bin", "/usr/lib", "/usr/local", "/usr/local/bin", "/usr/sbin", "/var",
+		// macOS
+		"/Applications", "/Library", "/System", "/Users", "/private", "/opt/homebrew",
+	}
 }
 
 func uninstallUV(inst models.PythonInstallation) *UninstallResult {

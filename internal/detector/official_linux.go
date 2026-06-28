@@ -19,7 +19,6 @@ func (d OfficialDetector) Detect() []models.PythonInstallation {
 	var results []models.PythonInstallation
 
 	results = append(results, d.fromKnownPaths()...)
-	results = append(results, d.fromDeadsnakes()...)
 
 	return dedup(results)
 }
@@ -88,26 +87,6 @@ func (d OfficialDetector) fromKnownPaths() []models.PythonInstallation {
 			})
 		}
 	}
-	return results
-}
-
-func (d OfficialDetector) fromDeadsnakes() []models.PythonInstallation {
-	var results []models.PythonInstallation
-
-	// Deadsnakes PPA installs to /usr/bin/pythonX.Y
-	// These are already picked up by fromKnownPaths, but we re-tag them
-	// Check if deadsnakes is in apt sources
-	if _, err := os.Stat("/etc/apt/sources.list.d"); err != nil {
-		return nil
-	}
-
-	matches, _ := filepath.Glob("/etc/apt/sources.list.d/*deadsnakes*")
-	if len(matches) == 0 {
-		return nil
-	}
-
-	// deadsnakes is available, re-scan for alternate Python versions
-	// They're installed as /usr/bin/python3.X and handled in fromKnownPaths
 	return results
 }
 
