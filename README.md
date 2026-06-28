@@ -69,7 +69,16 @@ Download the latest binary from [Releases](https://github.com/Junhui20/PyMolt/re
 |----------|------|
 | Windows  | `pymolt-windows.exe` |
 | macOS    | `pymolt-macos` |
-| Linux    | `pymolt-linux` |
+| Linux (modern) | `pymolt-linux` |
+| Linux (legacy) | `pymolt-linux-webkit4.0` |
+
+> [!IMPORTANT]
+> **Linux WebKit version.** The GUI links against WebKit2GTK. Most current
+> distros (Ubuntu 24.04+, Debian 12+, Fedora, Arch) ship **4.1** — use
+> `pymolt-linux`. Older ones (Ubuntu 20.04/22.04) only have **4.0** — use
+> `pymolt-linux-webkit4.0`. If the app exits with
+> `libwebkit2gtk-4.0.so.37: cannot open shared object file`, you grabbed the
+> wrong one. Check what you have with `ldconfig -p | grep webkit2gtk`.
 
 > [!NOTE]
 > The binaries are **not yet code-signed**, so your OS will warn on first launch.
@@ -90,12 +99,19 @@ chmod +x ./pymolt-macos
 
 **Windows** — SmartScreen may warn: click **More info** → **Run anyway**.
 
-**Linux** —
+**Linux** — pick the binary matching your WebKit2GTK version (see the note above):
 
 ```bash
-chmod +x ./pymolt-linux
+chmod +x ./pymolt-linux            # WebKit 4.1 (modern distros)
 ./pymolt-linux
+# …or, on Ubuntu 20.04/22.04:
+chmod +x ./pymolt-linux-webkit4.0  # WebKit 4.0 (legacy)
+./pymolt-linux-webkit4.0
 ```
+
+The runtime needs GTK3 and WebKit2GTK installed (they ship with most desktop
+environments). If missing: `sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0`
+(or `libwebkit2gtk-4.0-37` for the legacy build).
 
 ### Verify your download (optional)
 
@@ -115,10 +131,14 @@ Get-FileHash .\pymolt-windows.exe -Algorithm SHA256
 
 ```bash
 # Prerequisites: Go 1.26+, GCC (for CGo)
-# Linux also needs: libgtk-3-dev libwebkit2gtk-4.0-dev
+# Linux also needs the WebKit/GTK dev headers:
+#   modern (4.1): libgtk-3-dev libwebkit2gtk-4.1-dev   -> add tag: webkit2_41
+#   legacy (4.0): libgtk-3-dev libwebkit2gtk-4.0-dev   -> no extra tag
 git clone https://github.com/Junhui20/PyMolt.git
 cd PyMolt
-CGO_ENABLED=1 go build -tags desktop,production -ldflags "-s -w" -o pymolt .
+# Modern distros (WebKit 4.1):
+CGO_ENABLED=1 go build -tags desktop,production,webkit2_41 -ldflags "-s -w" -o pymolt .
+# Legacy distros (WebKit 4.0): drop the webkit2_41 tag.
 ```
 
 Or, if you have Go set up and just want it on your PATH:

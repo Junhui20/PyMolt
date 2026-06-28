@@ -6,6 +6,14 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- **Linux binary would not launch on modern distros.** Releases were linked
+  against WebKit2GTK **4.0**, which Ubuntu 24.04+, Debian 12+, Fedora, and Arch no
+  longer ship (they have **4.1**), so the app died at startup with
+  `libwebkit2gtk-4.0.so.37: cannot open shared object file`. Releases now publish
+  two Linux binaries: `pymolt-linux` (WebKit 4.1, modern) and
+  `pymolt-linux-webkit4.0` (legacy). See the README download table for which to use.
+
 ### Added
 - End-of-life / security badges on every detected interpreter — green **OK**,
   amber **SECURITY**, red **EOL** — based on the upstream support window.

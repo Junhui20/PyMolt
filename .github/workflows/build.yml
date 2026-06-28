@@ -105,19 +105,29 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+          # Both WebKit ABIs: 4.1 for modern distros (Ubuntu 24.04+, Debian 12+,
+          # Fedora, Arch) and 4.0 for legacy ones (Ubuntu 20.04/22.04).
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libwebkit2gtk-4.0-dev
 
-      - name: Build
+      - name: Build (WebKit 4.1, modern)
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           [ "${GITHUB_REF_TYPE}" = "tag" ] || VERSION="0.0.0-dev"
-          CGO_ENABLED=1 go build -mod=readonly -tags desktop,production -ldflags "-s -w -X github.com/Junhui20/PyMolt/internal/analyzer.AppVersion=${VERSION}" -o pymolt .
+          CGO_ENABLED=1 go build -mod=readonly -tags desktop,production,webkit2_41 -ldflags "-s -w -X github.com/Junhui20/PyMolt/internal/analyzer.AppVersion=${VERSION}" -o pymolt .
+
+      - name: Build (WebKit 4.0, legacy)
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          [ "${GITHUB_REF_TYPE}" = "tag" ] || VERSION="0.0.0-dev"
+          CGO_ENABLED=1 go build -mod=readonly -tags desktop,production -ldflags "-s -w -X github.com/Junhui20/PyMolt/internal/analyzer.AppVersion=${VERSION}" -o pymolt-webkit40 .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
           name: pymolt-linux
-          path: pymolt
+          path: |
+            pymolt
+            pymolt-webkit40
 
   release:
     needs: [build-windows, build-macos, build-linux]
@@ -137,8 +147,9 @@ jobs:
           cp artifacts/pymolt-windows/pymolt.exe pymolt-windows.exe
           cp artifacts/pymolt-macos/pymolt pymolt-macos
           cp artifacts/pymolt-linux/pymolt pymolt-linux
-          chmod +x pymolt-macos pymolt-linux
-          sha256sum pymolt-windows.exe pymolt-macos pymolt-linux > SHA256SUMS.txt
+          cp artifacts/pymolt-linux/pymolt-webkit40 pymolt-linux-webkit4.0
+          chmod +x pymolt-macos pymolt-linux pymolt-linux-webkit4.0
+          sha256sum pymolt-windows.exe pymolt-macos pymolt-linux pymolt-linux-webkit4.0 > SHA256SUMS.txt
           echo "Published checksums:"
           cat SHA256SUMS.txt
 
@@ -149,5 +160,6 @@ jobs:
             pymolt-windows.exe
             pymolt-macos
             pymolt-linux
+            pymolt-linux-webkit4.0
             SHA256SUMS.txt
           generate_release_notes: true
