@@ -113,6 +113,12 @@ func GenerateRecommendations(installs []models.PythonInstallation, dupes []model
 			if keepSet[inst.Executable] {
 				continue
 			}
+			// Never suggest removing the OS-managed interpreter: uninstalling
+			// /usr/bin (or equivalent) Python can break system tooling. If it isn't
+			// the one we kept, the user should resolve it manually.
+			if inst.Source == models.SourceSystem {
+				continue
+			}
 			recs = append(recs, models.CleanupRecommendation{
 				Installation: inst,
 				Action:       "Uninstall",

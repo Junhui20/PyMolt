@@ -443,6 +443,17 @@
       letter-spacing: .3px
     }
 
+    .dtag {
+      background: var(--orange-light, #fff3e0);
+      color: var(--orange);
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 9px;
+      font-weight: 700;
+      margin-left: 8px;
+      letter-spacing: .3px
+    }
+
     /* Side Panel */
     .sph {
       padding: 16px 20px;
@@ -1070,10 +1081,10 @@
       (S.orphanedVenvs || []).forEach(function (o) { oset[o.Executable] = true; });
       inst.sort(function (a, b) { var av = a.Source === 'Virtual Environment' ? 1 : 0, bv = b.Source === 'Virtual Environment' ? 1 : 0; if (av !== bv) return av - bv; if (a.Source !== b.Source) return a.Source.localeCompare(b.Source); return b.Version.localeCompare(a.Version); });
       sortedInst = inst;
-      var h = '<div class="tbl"><table style="table-layout:fixed"><colgroup><col style="width:140px"><col style="width:150px"><col style="width:60px"><col><col style="width:90px"></colgroup><thead><tr><th>Source</th><th>Version</th><th>Arch</th><th>Path</th><th style="text-align:right">Size</th></tr></thead><tbody>';
+      var h = '<div class="tbl"><table style="table-layout:fixed"><colgroup><col style="width:140px"><col style="width:200px"><col style="width:60px"><col><col style="width:90px"></colgroup><thead><tr><th>Source</th><th>Version</th><th>Arch</th><th>Path</th><th style="text-align:right">Size</th></tr></thead><tbody>';
       inst.forEach(function (i, idx) {
         var c = selExe === i.Executable ? ' class="sel"' : ''; var ot = (i.IsOrphaned || oset[i.Executable]) ? '<span class="otag">ORPHANED</span>' : '';
-        h += '<tr' + c + ' onclick="selIdx(' + idx + ')"><td><span class="badge ' + bc(i.Source) + '">' + esc(i.Source) + '</span></td><td><span style="font-weight:600">' + esc(i.Version) + '</span>' + eolBadge(i.EOL) + pep668Badge(i.ExternallyManaged) + ftBadge(i.FreeThreaded) + (i.IsDefault ? ' <span style="color:var(--orange)">DEFAULT</span>' : '') + ot + '</td><td style="color:var(--text3)">' + esc(i.Architecture || '-') + '</td><td class="path-cell" title="' + esc(i.Path) + '"><span class="mono">' + esc(i.Path) + '</span></td><td style="text-align:right;font-weight:600">' + fmtSize(i.SizeBytes) + '</td></tr>';
+        h += '<tr' + c + ' onclick="selIdx(' + idx + ')"><td><span class="badge ' + bc(i.Source) + '">' + esc(i.Source) + '</span></td><td style="white-space:normal;line-height:1.9"><span style="font-weight:600">' + esc(i.Version) + '</span>' + eolBadge(i.EOL) + pep668Badge(i.ExternallyManaged) + ftBadge(i.FreeThreaded) + (i.IsDefault ? ' <span class="dtag">DEFAULT</span>' : '') + ot + '</td><td style="color:var(--text3)">' + esc(i.Architecture || '-') + '</td><td class="path-cell" title="' + esc(i.Path) + '"><span class="mono">' + esc(i.Path) + '</span></td><td style="text-align:right;font-weight:600">' + fmtSize(i.SizeBytes) + '</td></tr>';
       });
       h += '</tbody></table></div>'; document.getElementById('tInstall').innerHTML = h;
     }

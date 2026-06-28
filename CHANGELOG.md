@@ -7,6 +7,17 @@ to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Fixed
+- **One system Python counted as several "duplicates."** Deduplication keyed on
+  the literal executable path, so the same interpreter reached through symlinks —
+  `/bin` → `/usr/bin` and `python3` → `python3.X`, common on every modern Linux —
+  was reported as 3 separate installs and flagged as a duplicate with a
+  **"remove the rest"** button. Following it could have damaged the system
+  interpreter. Dedup now resolves symlinks to the real interpreter (venvs stay
+  keyed by their own directory), and the cleanup engine never suggests removing an
+  OS-managed (`System`) Python.
+- A long Version cell (version + EOL + PEP 668 + DEFAULT badges) overflowed into
+  the Arch column. The column is wider, the cell now wraps, and `DEFAULT` is a
+  proper chip.
 - **Linux binary would not launch on modern distros.** Releases were linked
   against WebKit2GTK **4.0**, which Ubuntu 24.04+, Debian 12+, Fedora, and Arch no
   longer ship (they have **4.1**), so the app died at startup with
